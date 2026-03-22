@@ -1,9 +1,10 @@
 ---
 id: AD-001
 title: Project Scaffolding
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-22 15:21'
+updated_date: '2026-03-22 18:51'
 labels: []
 dependencies: []
 priority: high
