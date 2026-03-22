@@ -8,7 +8,8 @@
   "scripts": {
     "build": "tsc",
     "test": "node --import tsx/esm --test test/*.test.ts test/agents/*.test.ts",
-    "dev": "tsx src/cli/index.ts"
+    "dev": "tsx src/cli/index.ts",
+    "start": "tsx src/cli/index.ts agents"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
