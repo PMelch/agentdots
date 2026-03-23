@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 src/**/*.js
+!src/web/public/*.js
 *.tsbuildinfo
 /.claude/CLAUDE.local.md
 /AGENTS.local.md
