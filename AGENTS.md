@@ -26,3 +26,9 @@ Unified AI agent configuration manager with web UI.
 - `src/commands/` — Commands sync engine
 - `src/web/` — Web UI server + static assets
 - `src/core/` — Shared utilities, config loader, types
+
+
+<!-- SKILLS_ACTIVATION_START -->
+# Project Instructions
+- Active global skills: `backlog-workflow`, `context-hunter`, `create-plan`, `tdd-protocol`.
+<!-- SKILLS_ACTIVATION_END -->

@@ -6,6 +6,11 @@ import { readFile } from "node:fs/promises";
 import { registry } from "../agents/registry.js";
 import { McpManager } from "../mcp/manager.js";
 import { getMapper } from "../mcp/mapper.js";
+import { checkUpdates } from "../updates/checker.js";
+import { getProvider, getAllProviders } from "../updates/providers.js";
+import { executeUpdates } from "../updates/executor.js";
+import { runCommand } from "../updates/runner.js";
+import { promptConfirm } from "../updates/prompt.js";
 
 const program = new Command();
 
@@ -160,5 +165,115 @@ mcpCmd
 
     console.log(`\nSynced MCP config to ${agentConfigPath}`);
   });
+
+// --- update command ---
+
+program
+  .command("update")
+  .description("Update agents or check for available updates")
+  .argument("[id]", "Agent ID to target")
+  .option("--check", "Show available updates without performing them")
+  .option("-y, --yes", "Skip confirmation prompts and update all")
+  .action(async (id: string | undefined, opts: { check?: boolean; yes?: boolean }) => {
+    // Resolve agents to work with
+    let agents;
+    if (id) {
+      const agent = await registry.detect(id);
+      if (!agent) {
+        console.error(`Agent '${id}' not found.`);
+        process.exit(1);
+      }
+      if (!agent.installed) {
+        console.log(`\nAgent '${id}' is not installed.`);
+        return;
+      }
+      agents = [agent];
+    } else {
+      agents = (await registry.detectAll()).filter((a) => a.installed);
+      if (agents.length === 0) {
+        console.log("\nNo agents installed.");
+        return;
+      }
+    }
+
+    const providers = id
+      ? [getProvider(id)].filter((p): p is NonNullable<typeof p> => p !== undefined)
+      : getAllProviders();
+
+    console.log(`\nChecking updates for ${agents.length} installed agent(s)...\n`);
+    const results = await checkUpdates(agents, providers);
+
+    if (opts.check) {
+      printUpdatesTable(results);
+      return;
+    }
+
+    // Update mode
+    const pending = results.filter((r) => r.hasUpdate);
+    if (pending.length === 0) {
+      printUpdatesTable(results);
+      return;
+    }
+
+    printUpdatesTable(results);
+    console.log();
+
+    const report = await executeUpdates(results, {
+      yes: opts.yes ?? false,
+      runCommand,
+      confirm: (q) => promptConfirm(q),
+    });
+
+    let succeeded = 0;
+    let failed = 0;
+    let skipped = 0;
+    for (const r of report) {
+      if (r.skipped) {
+        if (r.skipReason !== "no update available") {
+          console.log(`  skipped  ${r.agentId}${r.skipReason ? ` (${r.skipReason})` : ""}`);
+          skipped++;
+        }
+      } else if (r.success) {
+        console.log(`  ✓  ${r.agentId} updated`);
+        succeeded++;
+      } else {
+        console.log(`  ✗  ${r.agentId} failed`);
+        failed++;
+      }
+    }
+
+    console.log(`\nDone. ${succeeded} updated, ${failed} failed, ${skipped} skipped.`);
+  });
+
+function printUpdatesTable(results: Awaited<ReturnType<typeof checkUpdates>>): void {
+  if (results.length === 0) {
+    console.log("No update information available.");
+    return;
+  }
+
+  const col = (s: string, w: number) => s.padEnd(w).slice(0, w);
+  const header = `${col("ID", 16)} ${col("CURRENT", 12)} ${col("LATEST", 12)} ${col("STATUS", 12)} UPDATE COMMAND`;
+  console.log(header);
+  console.log("-".repeat(Math.max(header.length, 80)));
+
+  for (const r of results) {
+    const status = r.latestVersion === undefined
+      ? "unknown"
+      : r.hasUpdate
+        ? "update ↑"
+        : "up to date";
+    const cmd = r.hasUpdate && r.updateCommand ? r.updateCommand : "-";
+    console.log(
+      `${col(r.agentId, 16)} ${col(r.currentVersion ?? "-", 12)} ${col(r.latestVersion ?? "-", 12)} ${col(status, 12)} ${cmd}`
+    );
+  }
+
+  const updateCount = results.filter((r) => r.hasUpdate).length;
+  if (updateCount > 0) {
+    console.log(`\n${updateCount} update(s) available.`);
+  } else {
+    console.log("\nAll agents are up to date.");
+  }
+}
 
 program.parse();

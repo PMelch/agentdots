@@ -3,3 +3,5 @@ dist/
 .env
 src/**/*.js
 *.tsbuildinfo
+/.claude/CLAUDE.local.md
+/AGENTS.local.md
