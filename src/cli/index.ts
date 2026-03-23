@@ -16,6 +16,8 @@ import { getAllMappers } from "../rules/mappers.js";
 import { SkillsManager } from "../skills/manager.js";
 import { getAllMappers as getAllSkillsMappers } from "../skills/mappers.js";
 import { startServer } from "../web/server.js";
+import { CommandsManager } from "../commands/manager.js";
+import { getAllMappers as getAllCommandsMappers } from "../commands/mappers.js";
 
 const program = new Command();
 
@@ -372,6 +374,105 @@ skillsCmd
         for (const name of result.modified) console.log(`  ~ ${name}`);
       } catch {
         // Skip agents with no mapper or unsupported scope.
+      }
+    }
+
+    if (!anyChanges) {
+      console.log(`\nNo changes for ${agentId ?? "any agent"} (${scope}).`);
+    }
+  });
+
+// --- commands command ---
+
+const commandsCmd = program
+  .command("commands")
+  .description("Manage and sync slash-commands to AI agents");
+
+commandsCmd
+  .command("list")
+  .description("List loaded commands from the commands directory")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const commandsDir = scope === "project"
+      ? join(".agentdots", "commands")
+      : join(homedir(), ".agentdots", "commands");
+
+    const manager = new CommandsManager(commandsDir);
+    const commands = await manager.loadCommands(scope);
+
+    if (commands.length === 0) {
+      console.log(`\nNo commands found (${scope}).`);
+      console.log(`Add .md files to: ${commandsDir}/`);
+      return;
+    }
+
+    console.log(`\nCommands (${scope}, ${commands.length}):\n`);
+    for (const cmd of commands) {
+      console.log(`  ${cmd.name}  (${cmd.source})`);
+    }
+  });
+
+commandsCmd
+  .command("sync")
+  .description("Sync commands to one or all agents")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const commandsDir = scope === "project"
+      ? join(".agentdots", "commands")
+      : join(homedir(), ".agentdots", "commands");
+
+    const manager = new CommandsManager(commandsDir);
+
+    if (agentId) {
+      try {
+        const writtenDir = await manager.syncToAgent(agentId, scope);
+        console.log(`\nSynced commands to ${agentId}: ${writtenDir}`);
+      } catch (err: unknown) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
+    } else {
+      const synced = await manager.syncToAll(scope);
+      if (synced.length === 0) {
+        console.log(`\nNo agents synced (${scope}).`);
+      } else {
+        console.log(`\nSynced commands to ${synced.length} agent(s):`);
+        for (const id of synced) console.log(`  ${id}`);
+      }
+    }
+  });
+
+commandsCmd
+  .command("diff")
+  .description("Show diff between source commands and agent command directories")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const commandsDir = scope === "project"
+      ? join(".agentdots", "commands")
+      : join(homedir(), ".agentdots", "commands");
+
+    const manager = new CommandsManager(commandsDir);
+    const targets = agentId
+      ? [agentId]
+      : getAllCommandsMappers().map((m) => m.agentId);
+
+    let anyChanges = false;
+    for (const id of targets) {
+      try {
+        const result = await manager.diff(id, scope);
+        if (!result.hasChanges) continue;
+        anyChanges = true;
+        console.log(`\n${id} (${scope}):`);
+        for (const name of result.added) console.log(`  + ${name}`);
+        for (const name of result.removed) console.log(`  - ${name}`);
+        for (const name of result.modified) console.log(`  ~ ${name}`);
+      } catch {
+        // Skip agents with no mapper or unsupported scope
       }
     }
 
