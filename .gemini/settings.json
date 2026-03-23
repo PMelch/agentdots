@@ -1,0 +1,10 @@
+{
+  "agent": {
+    "activeSkills": [
+      "backlog-workflow",
+      "context-hunter",
+      "create-plan",
+      "tdd-protocol"
+    ]
+  }
+}

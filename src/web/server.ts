@@ -2,6 +2,7 @@ import { createServer, IncomingMessage, ServerResponse } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { join, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { handleApiRequest } from "./api.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = join(__dirname, "public");
@@ -27,6 +28,10 @@ const MIME_TYPES: Record<string, string> = {
 export async function startServer(port: number = 3456) {
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     console.log(`${req.method} ${req.url}`);
+
+    if (req.url?.startsWith("/api/")) {
+      return handleApiRequest(req, res);
+    }
 
     let filePath = join(PUBLIC_DIR, req.url === "/" ? "index.html" : req.url!);
 

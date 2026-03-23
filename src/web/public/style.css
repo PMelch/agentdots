@@ -100,27 +100,215 @@ main {
 
 #content {
   padding: 2rem;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
 
-.card {
+[v-cloak] {
+  display: none;
+}
+
+/* Agents Grid */
+.agents-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.agent-card {
   background-color: var(--sidebar-bg);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
-.card h3 {
-  margin-top: 0;
-  color: var(--accent-color);
+.agent-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.card p {
+.agent-card.not-installed {
+  opacity: 0.7;
+}
+
+.agent-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.agent-icon {
+  font-size: 2rem;
+}
+
+.agent-card-header h3 {
+  margin: 0;
+  flex: 1;
+  font-size: 1.25rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.badge-installed {
+  background-color: rgba(35, 134, 54, 0.2);
+  color: #3fb950;
+  border: 1px solid rgba(63, 185, 80, 0.3);
+}
+
+.badge-not-installed {
+  background-color: rgba(248, 81, 73, 0.1);
+  color: #f85149;
+  border: 1px solid rgba(248, 81, 73, 0.2);
+}
+
+.agent-card-body {
+  flex: 1;
+}
+
+.agent-card-body p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.agent-id {
   color: var(--text-secondary);
-  line-height: 1.5;
+}
+
+code {
+  background-color: var(--bg-color);
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 85%;
+}
+
+.capabilities {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.cap-tag {
+  background-color: var(--hover-bg);
+  color: var(--accent-color);
+  font-size: 0.75rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.agent-card-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  background-color: var(--hover-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color);
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background-color: var(--sidebar-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header h3 {
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.detail-row .label {
+  width: 140px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.detail-row .value {
+  flex: 1;
+}
+
+.detail-section h4 {
+  margin: 1.5rem 0 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.detail-section ul {
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.detail-section li {
+  margin-bottom: 0.5rem;
 }
 
 @media (max-width: 768px) {

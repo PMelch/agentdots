@@ -5,33 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentDots — Unified AI Agent Config Manager</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Vue 3 Global Build -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
-    <div class="layout">
+    <div id="app" class="layout" v-cloak>
         <aside class="sidebar">
             <header>
                 <h1>AgentDots</h1>
             </header>
             <nav>
                 <ul>
-                    <li><a href="#agents" class="active">Agents</a></li>
-                    <li><a href="#rules">Rules</a></li>
-                    <li><a href="#skills">Skills</a></li>
-                    <li><a href="#mcp">MCP</a></li>
-                    <li><a href="#commands">Commands</a></li>
-                    <li><a href="#updates">Updates</a></li>
-                    <li><a href="#settings">Settings</a></li>
+                    <li><a href="#agents" :class="{ active: currentSection === 'agents' }" @click="currentSection = 'agents'">Agents</a></li>
+                    <li><a href="#rules" :class="{ active: currentSection === 'rules' }" @click="currentSection = 'rules'">Rules</a></li>
+                    <li><a href="#skills" :class="{ active: currentSection === 'skills' }" @click="currentSection = 'skills'">Skills</a></li>
+                    <li><a href="#mcp" :class="{ active: currentSection === 'mcp' }" @click="currentSection = 'mcp'">MCP</a></li>
+                    <li><a href="#commands" :class="{ active: currentSection === 'commands' }" @click="currentSection = 'commands'">Commands</a></li>
+                    <li><a href="#updates" :class="{ active: currentSection === 'updates' }" @click="currentSection = 'updates'">Updates</a></li>
+                    <li><a href="#settings" :class="{ active: currentSection === 'settings' }" @click="currentSection = 'settings'">Settings</a></li>
                 </ul>
             </nav>
         </aside>
-        <main id="app">
+        <main>
             <header class="main-header">
-                <h2 id="page-title">Dashboard</h2>
+                <h2>{{ pageTitle }}</h2>
             </header>
             <section id="content">
-                <p>Select a section from the sidebar to manage your AI agents.</p>
+                <!-- Agents Dashboard -->
+                <div v-if="currentSection === 'agents'" class="agents-grid">
+                    <div v-if="loading" class="loading">Loading agents...</div>
+                    <div v-else-if="agents.length === 0" class="empty-state">
+                        <p>No agents detected.</p>
+                    </div>
+                    <div v-for="agent in agents" :key="agent.id" class="agent-card" :class="{ 'not-installed': !agent.installed }">
+                        <div class="agent-card-header">
+                            <span class="agent-icon">{{ getAgentIcon(agent.id) }}</span>
+                            <h3>{{ agent.name }}</h3>
+                            <span class="badge" :class="agent.installed ? 'badge-installed' : 'badge-not-installed'">
+                                {{ agent.installed ? 'Installed' : 'Not Installed' }}
+                            </span>
+                        </div>
+                        <div class="agent-card-body">
+                            <p class="agent-version" v-if="agent.version">Version: {{ agent.version }}</p>
+                            <p class="agent-id">ID: <code>{{ agent.id }}</code></p>
+                            <div class="capabilities">
+                                <span v-for="cap in agent.capabilities" :key="cap" class="cap-tag">{{ cap }}</span>
+                            </div>
+                        </div>
+                        <div class="agent-card-footer">
+                            <button @click="selectAgent(agent)" class="btn-secondary">Details</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section Placeholders -->
+                <div v-else class="placeholder">
+                    <p>Section <strong>{{ currentSection }}</strong> is coming soon.</p>
+                </div>
             </section>
         </main>
+
+        <!-- Agent Detail Modal -->
+        <div v-if="selectedAgent" class="modal-overlay" @click.self="selectedAgent = null">
+            <div class="modal">
+                <header class="modal-header">
+                    <h3>{{ selectedAgent.name }} Details</h3>
+                    <button @click="selectedAgent = null" class="btn-close">&times;</button>
+                </header>
+                <div class="modal-body">
+                    <div class="detail-row">
+                        <span class="label">ID:</span>
+                        <span class="value"><code>{{ selectedAgent.id }}</code></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Status:</span>
+                        <span class="value">{{ selectedAgent.installed ? 'Installed' : 'Not Installed' }}</span>
+                    </div>
+                    <div class="detail-row" v-if="selectedAgent.version">
+                        <span class="label">Version:</span>
+                        <span class="value">{{ selectedAgent.version }}</span>
+                    </div>
+                    <div class="detail-row" v-if="selectedAgent.binaryPath">
+                        <span class="label">Binary Path:</span>
+                        <span class="value"><code>{{ selectedAgent.binaryPath }}</code></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Config Format:</span>
+                        <span class="value">{{ selectedAgent.configFormat }}</span>
+                    </div>
+                    <div class="detail-section">
+                        <h4>Config Paths</h4>
+                        <ul>
+                            <li v-for="path in selectedAgent.configPaths" :key="path"><code>{{ path }}</code></li>
+                        </ul>
+                    </div>
+                    <div class="detail-section">
+                        <h4>Capabilities</h4>
+                        <div class="capabilities">
+                            <span v-for="cap in selectedAgent.capabilities" :key="cap" class="cap-tag">{{ cap }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

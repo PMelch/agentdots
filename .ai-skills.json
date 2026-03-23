@@ -1,0 +1,15 @@
+{
+  "skills": [
+    "backlog-workflow",
+    "context-hunter",
+    "create-plan",
+    "tdd-protocol"
+  ],
+  "agents": [
+    "claude",
+    "gemini",
+    "codex",
+    "pi"
+  ],
+  "updatedAt": "2026-03-22T18:50:26.631Z"
+}
