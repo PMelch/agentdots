@@ -1,9 +1,10 @@
 ---
 id: AD-007
 title: Commands Sync Engine
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-22 15:21'
+updated_date: '2026-03-23 22:45'
 labels: []
 dependencies:
   - AD-002
