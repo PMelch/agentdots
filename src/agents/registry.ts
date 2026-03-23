@@ -8,6 +8,9 @@ import { opencodeDetector } from "./detectors/opencode.js";
 import { aiderDetector } from "./detectors/aider.js";
 import { windsurfDetector } from "./detectors/windsurf.js";
 import { piDetector } from "./detectors/pi.js";
+import { clineDetector } from "./detectors/cline.js";
+import { rooCodeDetector } from "./detectors/roo-code.js";
+import { zedDetector } from "./detectors/zed.js";
 
 const DEFAULT_DETECTORS: AgentDetector[] = [
   claudeCodeDetector,
@@ -19,6 +22,9 @@ const DEFAULT_DETECTORS: AgentDetector[] = [
   aiderDetector,
   windsurfDetector,
   piDetector,
+  clineDetector,
+  rooCodeDetector,
+  zedDetector,
 ];
 
 class AgentRegistry {

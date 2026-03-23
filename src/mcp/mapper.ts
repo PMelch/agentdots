@@ -211,6 +211,66 @@ export const codexMapper: McpMapper = {
   },
 };
 
+// --- Cline ---
+
+export const clineMapper: McpMapper = {
+  agentId: "cline",
+
+  toUnified(raw: Record<string, unknown>): McpServerConfig[] {
+    return parseMcpServersWrapper(raw);
+  },
+
+  fromUnified(configs: McpServerConfig[]): Record<string, unknown> {
+    return buildMcpServersWrapper(configs);
+  },
+
+  configPath(scope: "global" | "project"): string {
+    return scope === "global"
+      ? join(homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings", "cline_mcp_settings.json")
+      : join(".cline", "mcp_settings.json");
+  },
+};
+
+// --- Roo Code ---
+
+export const rooCodeMapper: McpMapper = {
+  agentId: "roo-code",
+
+  toUnified(raw: Record<string, unknown>): McpServerConfig[] {
+    return parseMcpServersWrapper(raw);
+  },
+
+  fromUnified(configs: McpServerConfig[]): Record<string, unknown> {
+    return buildMcpServersWrapper(configs);
+  },
+
+  configPath(scope: "global" | "project"): string {
+    return scope === "global"
+      ? join(homedir(), ".roo", "mcp_settings.json")
+      : join(".roo", "mcp.json");
+  },
+};
+
+// --- Zed ---
+
+export const zedMapper: McpMapper = {
+  agentId: "zed",
+
+  toUnified(raw: Record<string, unknown>): McpServerConfig[] {
+    return parseMcpServersWrapper(raw);
+  },
+
+  fromUnified(configs: McpServerConfig[]): Record<string, unknown> {
+    return buildMcpServersWrapper(configs);
+  },
+
+  configPath(scope: "global" | "project"): string {
+    return scope === "global"
+      ? join(homedir(), ".config", "zed", "settings.json")
+      : join(".zed", "settings.json");
+  },
+};
+
 // --- Registry ---
 
 const mappers = new Map<string, McpMapper>([
@@ -221,6 +281,9 @@ const mappers = new Map<string, McpMapper>([
   ["opencode", opencodeMapper],
   ["windsurf", windsurfMapper],
   ["codex", codexMapper],
+  ["cline", clineMapper],
+  ["roo-code", rooCodeMapper],
+  ["zed", zedMapper],
 ]);
 
 export function getMapper(agentId: string): McpMapper | undefined {
