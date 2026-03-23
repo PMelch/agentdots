@@ -13,6 +13,8 @@ import { runCommand } from "../updates/runner.js";
 import { promptConfirm } from "../updates/prompt.js";
 import { RulesManager } from "../rules/manager.js";
 import { getAllMappers } from "../rules/mappers.js";
+import { SkillsManager } from "../skills/manager.js";
+import { getAllMappers as getAllSkillsMappers } from "../skills/mappers.js";
 
 const program = new Command();
 
@@ -259,6 +261,105 @@ rulesCmd
         console.log(`  desired: ${result.desired.slice(0, 60)}...`);
       } catch {
         // Skip agents with no mapper or unsupported scope
+      }
+    }
+
+    if (!anyChanges) {
+      console.log(`\nNo changes for ${agentId ?? "any agent"} (${scope}).`);
+    }
+  });
+
+// --- skills command ---
+
+const skillsCmd = program
+  .command("skills")
+  .description("Manage and sync skills to AI agents");
+
+skillsCmd
+  .command("list")
+  .description("List loaded skills from the skills directory")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const skillsDir = scope === "project"
+      ? join(".agentdots", "skills")
+      : join(homedir(), ".agentdots", "skills");
+
+    const manager = new SkillsManager(skillsDir);
+    const skills = await manager.loadSkills(scope);
+
+    if (skills.length === 0) {
+      console.log(`\nNo skills found (${scope}).`);
+      console.log(`Add skill directories to: ${skillsDir}/`);
+      return;
+    }
+
+    console.log(`\nSkills (${scope}, ${skills.length}):\n`);
+    for (const skill of skills) {
+      console.log(`  ${skill.name}  (${skill.source})`);
+    }
+  });
+
+skillsCmd
+  .command("sync")
+  .description("Sync skills to one or all agents")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const skillsDir = scope === "project"
+      ? join(".agentdots", "skills")
+      : join(homedir(), ".agentdots", "skills");
+
+    const manager = new SkillsManager(skillsDir);
+
+    if (agentId) {
+      try {
+        const writtenPath = await manager.syncToAgent(agentId, scope);
+        console.log(`\nSynced skills to ${agentId}: ${writtenPath}`);
+      } catch (err: unknown) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
+    } else {
+      const synced = await manager.syncToAll(scope);
+      if (synced.length === 0) {
+        console.log(`\nNo agents synced (${scope}).`);
+      } else {
+        console.log(`\nSynced skills to ${synced.length} agent(s):`);
+        for (const id of synced) console.log(`  ${id}`);
+      }
+    }
+  });
+
+skillsCmd
+  .command("diff")
+  .description("Show diff between installed agent skills and desired skills")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const skillsDir = scope === "project"
+      ? join(".agentdots", "skills")
+      : join(homedir(), ".agentdots", "skills");
+
+    const manager = new SkillsManager(skillsDir);
+    const targets = agentId
+      ? [agentId]
+      : getAllSkillsMappers().map((mapper) => mapper.agentId);
+
+    let anyChanges = false;
+    for (const id of targets) {
+      try {
+        const result = await manager.diff(id, scope);
+        if (!result.hasChanges) continue;
+        anyChanges = true;
+        console.log(`\n${id} (${scope}):`);
+        for (const name of result.added) console.log(`  + ${name}`);
+        for (const name of result.removed) console.log(`  - ${name}`);
+        for (const name of result.modified) console.log(`  ~ ${name}`);
+      } catch {
+        // Skip agents with no mapper or unsupported scope.
       }
     }
 

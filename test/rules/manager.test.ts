@@ -5,12 +5,16 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 let tempDir: string;
+let previousCwd: string;
 
 async function setup() {
   tempDir = await mkdtemp(join(tmpdir(), "agentdots-rules-test-"));
+  previousCwd = process.cwd();
+  process.chdir(tempDir);
 }
 
 async function teardown() {
+  process.chdir(previousCwd);
   await rm(tempDir, { recursive: true, force: true });
 }
 

@@ -41,7 +41,7 @@ export const cursorDetector: AgentDetector = {
         ".cursor",
       ],
       configFormat: "json",
-      capabilities: ["mcp", "rules", "commands"],
+      capabilities: ["mcp", "rules", "skills", "commands"],
     };
   },
 };

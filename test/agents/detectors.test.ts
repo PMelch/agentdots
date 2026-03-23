@@ -6,10 +6,10 @@ import assert from "node:assert/strict";
 
 describe("detector contracts", () => {
   const expectedDetectors = [
-    { id: "claude-code", format: "json", capabilities: ["mcp", "rules", "commands", "memory"] },
+    { id: "claude-code", format: "json", capabilities: ["mcp", "rules", "skills", "commands", "memory"] },
     { id: "codex", format: "toml", capabilities: ["mcp", "rules"] },
     { id: "gemini", format: "markdown", capabilities: ["rules"] },
-    { id: "cursor", format: "json", capabilities: ["mcp", "rules", "commands"] },
+    { id: "cursor", format: "json", capabilities: ["mcp", "rules", "skills", "commands"] },
     { id: "copilot", format: "markdown", capabilities: ["rules"] },
     { id: "opencode", format: "json", capabilities: ["mcp", "rules"] },
     { id: "aider", format: "yaml", capabilities: ["rules"] },

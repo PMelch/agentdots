@@ -43,7 +43,7 @@ export const rooCodeDetector: AgentDetector = {
         ".roorules",
       ],
       configFormat: "json",
-      capabilities: ["mcp", "rules", "commands"],
+      capabilities: ["mcp", "rules", "skills", "commands"],
     };
   },
 };

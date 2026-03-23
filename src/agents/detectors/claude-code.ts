@@ -21,7 +21,7 @@ export const claudeCodeDetector: AgentDetector = {
         ".claude",
       ],
       configFormat: "json",
-      capabilities: ["mcp", "rules", "commands", "memory"],
+      capabilities: ["mcp", "rules", "skills", "commands", "memory"],
     };
   },
 };
