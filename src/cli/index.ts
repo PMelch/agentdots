@@ -11,6 +11,8 @@ import { getProvider, getAllProviders } from "../updates/providers.js";
 import { executeUpdates } from "../updates/executor.js";
 import { runCommand } from "../updates/runner.js";
 import { promptConfirm } from "../updates/prompt.js";
+import { RulesManager } from "../rules/manager.js";
+import { getAllMappers } from "../rules/mappers.js";
 
 const program = new Command();
 
@@ -164,6 +166,105 @@ mcpCmd
     await write(agentConfigPath, JSON.stringify(agentConfig, null, 2));
 
     console.log(`\nSynced MCP config to ${agentConfigPath}`);
+  });
+
+// --- rules command ---
+
+const rulesCmd = program
+  .command("rules")
+  .description("Manage and sync rules to AI agents");
+
+rulesCmd
+  .command("list")
+  .description("List loaded rules from the rules directory")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const rulesDir = scope === "project"
+      ? join(".agentdots", "rules")
+      : join(homedir(), ".agentdots", "rules");
+
+    const manager = new RulesManager(rulesDir);
+    const rules = await manager.loadRules(scope);
+
+    if (rules.length === 0) {
+      console.log(`\nNo rules found (${scope}).`);
+      console.log(`Add .md files to: ${rulesDir}/`);
+      return;
+    }
+
+    console.log(`\nRules (${scope}, ${rules.length}):\n`);
+    for (const r of rules) {
+      console.log(`  ${r.name}  (${r.source})`);
+    }
+  });
+
+rulesCmd
+  .command("sync")
+  .description("Sync rules to one or all agents")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const rulesDir = scope === "project"
+      ? join(".agentdots", "rules")
+      : join(homedir(), ".agentdots", "rules");
+
+    const manager = new RulesManager(rulesDir);
+
+    if (agentId) {
+      try {
+        const writtenPath = await manager.syncToAgent(agentId, scope);
+        console.log(`\nSynced rules to ${agentId}: ${writtenPath}`);
+      } catch (err: unknown) {
+        console.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        process.exit(1);
+      }
+    } else {
+      const synced = await manager.syncToAll(scope);
+      if (synced.length === 0) {
+        console.log(`\nNo agents synced (${scope}).`);
+      } else {
+        console.log(`\nSynced rules to ${synced.length} agent(s):`);
+        for (const id of synced) console.log(`  ${id}`);
+      }
+    }
+  });
+
+rulesCmd
+  .command("diff")
+  .description("Show diff between current agent rules and desired merged rules")
+  .argument("[agentId]", "Target agent ID (omit for all)")
+  .option("-s, --scope <scope>", "Config scope: global or project", "project")
+  .action(async (agentId: string | undefined, opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const rulesDir = scope === "project"
+      ? join(".agentdots", "rules")
+      : join(homedir(), ".agentdots", "rules");
+
+    const manager = new RulesManager(rulesDir);
+
+    const targets = agentId
+      ? [agentId]
+      : getAllMappers().map((m) => m.agentId);
+
+    let anyChanges = false;
+    for (const id of targets) {
+      try {
+        const result = await manager.diff(id, scope);
+        if (!result.hasChanges) continue;
+        anyChanges = true;
+        console.log(`\n${id} (${scope}):`);
+        console.log(`  current: ${result.current === null ? "(none)" : `${result.current.slice(0, 60)}...`}`);
+        console.log(`  desired: ${result.desired.slice(0, 60)}...`);
+      } catch {
+        // Skip agents with no mapper or unsupported scope
+      }
+    }
+
+    if (!anyChanges) {
+      console.log(`\nNo changes for ${agentId ?? "any agent"} (${scope}).`);
+    }
   });
 
 // --- update command ---
