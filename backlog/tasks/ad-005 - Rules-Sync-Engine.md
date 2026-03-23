@@ -1,9 +1,10 @@
 ---
 id: AD-005
 title: Rules Sync Engine
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-22 15:21'
+updated_date: '2026-03-23 19:17'
 labels: []
 dependencies:
   - AD-002
