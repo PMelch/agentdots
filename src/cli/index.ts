@@ -15,6 +15,7 @@ import { RulesManager } from "../rules/manager.js";
 import { getAllMappers } from "../rules/mappers.js";
 import { SkillsManager } from "../skills/manager.js";
 import { getAllMappers as getAllSkillsMappers } from "../skills/mappers.js";
+import { startServer } from "../web/server.js";
 
 const program = new Command();
 
@@ -62,6 +63,17 @@ const agentsCmd = program
         );
       }
     }
+  });
+
+// --- serve command ---
+
+program
+  .command("serve")
+  .description("Launch the Web UI")
+  .option("-p, --port <port>", "Port to listen on", "3456")
+  .action(async (opts: { port: string }) => {
+    const port = parseInt(opts.port, 10);
+    await startServer(port);
   });
 
 // --- MCP command ---
