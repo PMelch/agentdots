@@ -13,5 +13,5 @@ priority: medium
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Browse, search, and install skills from external skill repositories (ClawHub, Cursor Directory, Cline marketplace, community repos) via CLI and Web UI. Support: listing available skills, search by name/tag, install to ~/.agentdots/skills/ or .agentdots/skills/, version pinning, update checks. CLI: agentdots skills search <query>, agentdots skills install <name>, agentdots skills update. Web UI: browsable marketplace with install button. Registry adapters for multiple sources (pluggable).
+Browse, search, and install skills from external skill repositories (ClawHub, Cursor Directory, Cline marketplace, community repos) via CLI and Web UI. Support: listing available skills, search by name/tag, install to ~/.agentdots/skills/ or .agentdots/skills/, version pinning, update checks. CLI: agentdots skills search <query>, agentdots skills install <name>, agentdots skills remove <name>, agentdots skills update. Web UI: browsable marketplace with install button. Registry adapters for multiple sources (pluggable).
 <!-- SECTION:DESCRIPTION:END -->
