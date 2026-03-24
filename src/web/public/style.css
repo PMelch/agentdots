@@ -717,3 +717,35 @@ code {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 0.8; }
 }
+
+/* Agent card usage section */
+.agent-usage {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.usage-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.usage-label {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.usage-row span:last-child {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.no-usage {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.5;
+  font-style: italic;
+}
