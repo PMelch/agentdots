@@ -1,16 +1,16 @@
 export const AGENT_ICONS = {
-  "claude-code": "https://claude.ai/favicon.ico",
-  "cursor": "https://www.cursor.com/favicon.ico",
-  "copilot": "https://github.com/favicon.ico",
-  "gemini": "https://gemini.google.com/favicon.ico",
-  "codex": "https://openai.com/favicon.ico",
-  "opencode": "https://opencode.ai/favicon.ico",
-  "aider": "https://aider.chat/assets/favicon.ico",
-  "windsurf": "https://windsurf.com/favicon.ico",
-  "cline": "https://cline.bot/favicon.ico",
-  "roo-code": "https://roocode.com/favicon.ico",
-  "zed": "https://zed.dev/favicon.ico",
-  "pi": "https://pi.dev/favicon.ico",
+  "claude-code": "icons/claude-code.ico",
+  "cursor": "icons/cursor.ico",
+  "copilot": "icons/copilot.ico",
+  "gemini": "icons/gemini.ico",
+  "codex": "icons/codex.ico",
+  "opencode": "icons/opencode.ico",
+  "aider": "icons/aider.ico",
+  "windsurf": "icons/windsurf.ico",
+  "cline": "icons/cline.ico",
+  "roo-code": "icons/roo-code.ico",
+  "zed": "icons/zed.ico",
+  "pi": "icons/pi.ico",
 };
 
 export function getAgentIcon(id) {
