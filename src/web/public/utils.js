@@ -5,7 +5,7 @@ export const AGENT_ICONS = {
   "gemini": "icons/gemini.ico",
   "codex": "icons/codex.ico",
   "opencode": "icons/opencode.ico",
-  "aider": "icons/aider.ico",
+  "aider": "icons/aider.png",
   "windsurf": "icons/windsurf.ico",
   "cline": "icons/cline.png",
   "roo-code": "icons/roo-code.ico",
