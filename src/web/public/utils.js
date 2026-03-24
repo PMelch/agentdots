@@ -10,7 +10,7 @@ export const AGENT_ICONS = {
   "cline": "icons/cline.ico",
   "roo-code": "icons/roo-code.ico",
   "zed": "icons/zed.ico",
-  "pi": "icons/pi.ico",
+  "pi": "icons/pi.svg",
 };
 
 export function getAgentIcon(id) {
