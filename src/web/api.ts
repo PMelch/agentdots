@@ -2,6 +2,8 @@ import { IncomingMessage, ServerResponse } from "node:http";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { registry } from "../agents/registry.js";
+import { resolveInstallInfo, executeInstall } from "../agents/install.js";
+import { getUsage, getAllUsage } from "../usage/manager.js";
 import { RulesManager } from "../rules/manager.js";
 import { SkillsManager } from "../skills/manager.js";
 import { McpManager } from "../mcp/manager.js";
@@ -26,6 +28,26 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     if (path === "/api/agents" && method === "GET") {
       const agents = await registry.detectAll();
       return sendJson(agents);
+    }
+
+    // Install agent
+    if (path.match(/^\/api\/agents\/[^/]+\/install$/) && method === "POST") {
+      const parts = path.split("/");
+      const id = parts[3];
+      if (!id) return sendJson({ error: "Missing agent ID" }, 400);
+
+      const info = resolveInstallInfo(id);
+      if (info.method === "manual") {
+        return sendJson(info);
+      }
+
+      const result = await executeInstall(id);
+      if (result.success) {
+        // Re-detect agent after install
+        const agent = await registry.detect(id);
+        return sendJson({ ...result, agent });
+      }
+      return sendJson(result, result.success ? 200 : 500);
     }
 
     if (path.startsWith("/api/agents/") && method === "GET") {
@@ -155,6 +177,32 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
       });
 
       return sendJson(report[0]);
+    }
+
+    // --- Usage ---
+    if (path === "/api/usage" && method === "GET") {
+      const usages = await getAllUsage();
+      return sendJson(usages);
+    }
+
+    if (path.startsWith("/api/usage/") && method === "GET") {
+      const agentId = path.split("/").pop();
+      if (!agentId) return sendJson({ error: "Missing agent ID" }, 400);
+      const usage = await getUsage(agentId);
+      return sendJson(usage);
+    }
+
+    // --- Usage ---
+    if (path === "/api/usage" && method === "GET") {
+      const results = await getAllUsage();
+      return sendJson(results);
+    }
+
+    if (path.startsWith("/api/usage/") && method === "GET") {
+      const id = path.split("/").pop();
+      if (!id) return sendJson({ error: "Missing agent ID" }, 400);
+      const result = await getUsage(id);
+      return sendJson(result);
     }
 
     // --- Config (Placeholder for now) ---

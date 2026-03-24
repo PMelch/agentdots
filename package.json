@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --import tsx/esm --test test/*.test.ts test/agents/*.test.ts test/mcp/*.test.ts test/updates/*.test.ts test/rules/*.test.ts test/skills/*.test.ts test/commands/*.test.ts",
+    "test": "node --import tsx/esm --test test/*.test.ts test/agents/*.test.ts test/mcp/*.test.ts test/updates/*.test.ts test/rules/*.test.ts test/skills/*.test.ts test/commands/*.test.ts test/usage/*.test.ts",
     "dev": "tsx src/cli/index.ts",
     "start": "tsx src/cli/index.ts"
   },

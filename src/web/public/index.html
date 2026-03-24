@@ -51,9 +51,44 @@
                             <div class="capabilities">
                                 <span v-for="cap in agent.capabilities" :key="cap" class="cap-tag">{{ cap }}</span>
                             </div>
+                            <!-- Usage info for installed agents -->
+                            <div v-if="agent.installed && usage[agent.id]" class="agent-usage">
+                                <template v-if="usage[agent.id].available">
+                                    <div class="usage-row" v-if="usage[agent.id].tokens">
+                                        <span class="usage-label">Tokens:</span>
+                                        <span>{{ formatTokens(usage[agent.id].tokens.input) }} in / {{ formatTokens(usage[agent.id].tokens.output) }} out</span>
+                                    </div>
+                                    <div class="usage-row" v-if="usage[agent.id].cost">
+                                        <span class="usage-label">Est. cost:</span>
+                                        <span>${{ usage[agent.id].cost.estimated.toFixed(4) }}</span>
+                                    </div>
+                                    <div class="usage-row" v-if="usage[agent.id].sessions">
+                                        <span class="usage-label">Sessions:</span>
+                                        <span>{{ usage[agent.id].sessions }}</span>
+                                    </div>
+                                    <div class="usage-row" v-if="usage[agent.id].lastActive">
+                                        <span class="usage-label">Last active:</span>
+                                        <span>{{ new Date(usage[agent.id].lastActive).toLocaleDateString() }}</span>
+                                    </div>
+                                </template>
+                                <div v-else class="no-usage">No usage data available</div>
+                            </div>
                         </div>
                         <div class="agent-card-footer">
                             <button @click="selectAgent(agent)" class="btn-secondary">Details</button>
+                            <!-- Install button for non-installed agents -->
+                            <template v-if="!agent.installed">
+                                <button
+                                    v-if="!installResults[agent.id]"
+                                    @click="installAgent(agent.id)"
+                                    class="btn-primary"
+                                    :disabled="installingAgents.has(agent.id)">
+                                    {{ installingAgents.has(agent.id) ? '⏳ Installing...' : '⬇ Install' }}
+                                </button>
+                                <span v-if="installResults[agent.id]?.success" class="badge badge-success">✓ Installed</span>
+                                <a v-if="installResults[agent.id]?.downloadUrl" :href="installResults[agent.id].downloadUrl" target="_blank" rel="noopener" class="btn-secondary">⬇ Download</a>
+                                <span v-if="installResults[agent.id] && !installResults[agent.id].success && !installResults[agent.id].downloadUrl" class="badge badge-error">✗ Failed</span>
+                            </template>
                         </div>
                     </div>
                 </div>

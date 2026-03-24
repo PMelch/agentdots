@@ -7,7 +7,7 @@ const AGENT_ICONS = {
   "gemini": "♊",
   "codex": "📝",
   "opencode": "🔓",
-  "aider": "🧑‍💻",
+  "aider": "🧑💻",
   "windsurf": "🏄",
   "cline": "📟",
   "roo-code": "🦘",
@@ -37,12 +37,20 @@ createApp({
     const error = ref(null);
     const selectedAgent = ref(null);
 
+    // Install state
+    const installingAgents = ref(new Set());
+    const installResults = ref({});
+
     // Updates state
     const updates = ref([]);
     const updatesLoading = ref(false);
     const updatesError = ref(null);
     const updatingAgents = ref(new Set());
     const updateResults = ref({});
+
+    // Usage state
+    const usage = ref({});
+    const usageLoading = ref(false);
 
     const pageTitle = computed(() => PAGE_TITLES[currentSection.value] ?? currentSection.value);
 
@@ -52,6 +60,13 @@ createApp({
 
     function selectAgent(agent) {
       selectedAgent.value = agent;
+    }
+
+    function formatTokens(n) {
+      if (!n) return "0";
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+      if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+      return String(n);
     }
 
     async function fetchAgents() {
@@ -65,6 +80,41 @@ createApp({
         error.value = err.message;
       } finally {
         loading.value = false;
+      }
+    }
+
+    async function fetchUsage() {
+      usageLoading.value = true;
+      try {
+        const res = await fetch("/api/usage");
+        if (!res.ok) return;
+        const list = await res.json();
+        const map = {};
+        for (const u of list) map[u.agentId] = u;
+        usage.value = map;
+      } catch {
+        // non-critical
+      } finally {
+        usageLoading.value = false;
+      }
+    }
+
+    async function installAgent(agentId) {
+      installingAgents.value.add(agentId);
+      installResults.value[agentId] = null;
+      try {
+        const res = await fetch(`/api/agents/${agentId}/install`, { method: "POST" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result = await res.json();
+        installResults.value[agentId] = result;
+        if (result.success) {
+          await fetchAgents();
+          await fetchUsage();
+        }
+      } catch (err) {
+        installResults.value[agentId] = { success: false, error: err.message };
+      } finally {
+        installingAgents.value.delete(agentId);
       }
     }
 
@@ -109,26 +159,24 @@ createApp({
       for (const u of pending) {
         await updateAgent(u.agentId);
       }
-      // Refresh after all done
       await fetchUpdates();
     }
 
     const updatesAvailableCount = computed(() => updates.value.filter(u => u.hasUpdate).length);
     const isUpdatingAny = computed(() => updatingAgents.value.size > 0);
 
-    // Handle browser back/forward navigation
     window.addEventListener("hashchange", () => {
       currentSection.value = getHashSection();
     });
 
-    // Fetch data when switching sections
     watch(currentSection, (section) => {
-      if (section === "agents") fetchAgents();
+      if (section === "agents") { fetchAgents(); fetchUsage(); }
       if (section === "updates") fetchUpdates();
     });
 
     onMounted(() => {
       fetchAgents();
+      fetchUsage();
     });
 
     return {
@@ -141,6 +189,9 @@ createApp({
       getAgentIcon,
       selectAgent,
       navigate,
+      installingAgents,
+      installResults,
+      installAgent,
       updates,
       updatesLoading,
       updatesError,
@@ -151,6 +202,9 @@ createApp({
       updateAll,
       updatesAvailableCount,
       isUpdatingAny,
+      usage,
+      usageLoading,
+      formatTokens,
     };
   },
 }).mount("#app");
