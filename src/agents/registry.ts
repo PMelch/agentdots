@@ -47,6 +47,17 @@ class AgentRegistry {
     return detector.detect();
   }
 
+  /** Fast: returns agent stubs without running detection (no shell calls) */
+  listAll(): Array<{ id: string; name: string }> {
+    const NAMES: Record<string, string> = {
+      "claude-code": "Claude Code", codex: "OpenAI Codex CLI", gemini: "Gemini CLI",
+      cursor: "Cursor", copilot: "GitHub Copilot", opencode: "OpenCode",
+      aider: "Aider", windsurf: "Windsurf", pi: "Pi",
+      cline: "Cline", "roo-code": "Roo Code", zed: "Zed",
+    };
+    return [...this.detectors.keys()].map(id => ({ id, name: NAMES[id] ?? id }));
+  }
+
   register(detector: AgentDetector): void {
     this.detectors.set(detector.id, detector);
   }

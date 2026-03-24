@@ -25,6 +25,11 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     };
 
     // --- Agents ---
+    // Fast list: just names/ids, no shell detection
+    if (path === "/api/agents/list" && method === "GET") {
+      return sendJson(registry.listAll());
+    }
+
     if (path === "/api/agents" && method === "GET") {
       const agents = await registry.detectAll();
       return sendJson(agents);

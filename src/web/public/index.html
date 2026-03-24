@@ -37,12 +37,12 @@
                     <div v-else-if="agents.length === 0" class="empty-state">
                         <p>No agents detected.</p>
                     </div>
-                    <div v-for="agent in agents" :key="agent.id" class="agent-card" :class="{ 'not-installed': !agent.installed }">
+                    <div v-for="agent in agents" :key="agent.id" class="agent-card" :class="{ 'not-installed': agent.installed === false, 'skeleton': agent._skeleton }">
                         <div class="agent-card-header">
                             <span class="agent-icon">{{ getAgentIcon(agent.id) }}</span>
                             <h3>{{ agent.name }}</h3>
-                            <span class="badge" :class="agent.installed ? 'badge-installed' : 'badge-not-installed'">
-                                {{ agent.installed ? 'Installed' : 'Not Installed' }}
+                            <span class="badge" :class="agent._skeleton ? 'badge-unknown' : agent.installed ? 'badge-installed' : 'badge-not-installed'">
+                                {{ agent._skeleton ? 'Detecting...' : agent.installed ? 'Installed' : 'Not Installed' }}
                             </span>
                         </div>
                         <div class="agent-card-body">

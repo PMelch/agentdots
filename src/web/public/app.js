@@ -100,6 +100,20 @@ createApp({
       loading.value = true;
       error.value = null;
       try {
+        // Stage 1: instant skeleton data (no shell calls)
+        const listRes = await fetch("/api/agents/list");
+        if (listRes.ok) {
+          const stubs = await listRes.json();
+          // Only set skeletons if we don't already have full data
+          if (agents.value.length === 0) {
+            agents.value = stubs.map(s => ({
+              ...s, installed: null, version: null, binaryPath: null,
+              configPaths: [], configFormat: "json", capabilities: [],
+              _skeleton: true,
+            }));
+          }
+        }
+        // Stage 2: full detection (slow)
         const res = await fetch("/api/agents");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         agents.value = await res.json();
