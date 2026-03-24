@@ -71,16 +71,43 @@ async function writeManifest(dir: string, skills: string[]): Promise<void> {
 export class SkillsManager {
   constructor(private skillsDir: string) {}
 
+  /**
+   * Load skills from agentdots dir AND all agent-specific skill directories.
+   * Deduplicates by name — agentdots dir takes priority, then first-found wins.
+   */
   async loadSkills(scope: "global" | "project"): Promise<SkillDefinition[]> {
+    const seen = new Map<string, SkillDefinition>();
+
+    // 1. Load from agentdots central dir (highest priority)
+    const centralNames = await listDirectories(this.skillsDir);
+    for (const name of centralNames) {
+      const skillPath = join(this.skillsDir, name);
+      seen.set(name, { name, path: skillPath, scope, source: skillPath });
+    }
+
+    // 2. Load from each agent's skill directory
+    for (const mapper of getAllMappers()) {
+      const agentSkillsDir = mapper.skillsPath(scope);
+      if (!agentSkillsDir) continue;
+
+      const agentNames = await listDirectories(agentSkillsDir);
+      for (const name of agentNames) {
+        if (seen.has(name)) continue; // skip duplicates
+        if (name.startsWith(".")) continue; // skip hidden dirs like .agentdots-managed-skills
+        const skillPath = join(agentSkillsDir, name);
+        seen.set(name, { name, path: skillPath, scope, source: skillPath });
+      }
+    }
+
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Load skills only from the central agentdots dir (for sync operations) */
+  async loadCentralSkills(scope: "global" | "project"): Promise<SkillDefinition[]> {
     const names = await listDirectories(this.skillsDir);
     return names.map((name) => {
       const skillPath = join(this.skillsDir, name);
-      return {
-        name,
-        path: skillPath,
-        scope,
-        source: skillPath,
-      };
+      return { name, path: skillPath, scope, source: skillPath };
     });
   }
 
@@ -95,7 +122,8 @@ export class SkillsManager {
       throw new Error(`Agent '${agentId}' does not support ${scope} skills`);
     }
 
-    const skills = await this.loadSkills(scope);
+    // Sync only from central dir, not from other agents
+    const skills = await this.loadCentralSkills(scope);
     const desiredNames = skills.map((skill) => skill.name).sort();
     const previousNames = await readManifest(targetRoot);
 
@@ -142,7 +170,7 @@ export class SkillsManager {
       throw new Error(`Agent '${agentId}' does not support ${scope} skills`);
     }
 
-    const desiredSkills = await this.loadSkills(scope);
+    const desiredSkills = await this.loadCentralSkills(scope);
     const installedSkills = await this.listInstalled(agentId, scope);
     const desiredMap = new Map(desiredSkills.map((skill) => [skill.name, skill.path]));
 
