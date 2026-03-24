@@ -39,8 +39,8 @@ const PROVIDERS: UpdateProvider[] = [
   },
   {
     agentId: "copilot",
-    source: { type: "custom" },
-    fetchLatest: async () => undefined,
+    source: { type: "npm", packageName: "copilot-cli", aliases: { brew: "copilot-cli" } },
+    fetchLatest: () => fetchGithubVersion("github/copilot-cli"),
   },
   {
     agentId: "cline",
