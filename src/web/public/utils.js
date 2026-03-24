@@ -3,7 +3,7 @@ export const AGENT_ICONS = {
   "cursor": "icons/cursor.ico",
   "copilot": "icons/copilot.ico",
   "gemini": "icons/gemini.svg",
-  "codex": "icons/codex.ico",
+  "codex": "icons/codex.png",
   "opencode": "icons/opencode.ico",
   "aider": "icons/aider.png",
   "windsurf": "icons/windsurf.ico",
