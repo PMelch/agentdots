@@ -9,7 +9,7 @@ export const AGENT_ICONS = {
   "windsurf": "icons/windsurf.ico",
   "cline": "icons/cline.png",
   "roo-code": "icons/roo-code.ico",
-  "zed": "icons/zed.ico",
+  "zed": "icons/zed.svg",
   "pi": "icons/pi.svg",
 };
 
