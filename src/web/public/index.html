@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AgentDots — Unified AI Agent Config Manager</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Vue 3 Global Build (prod) -->
+    <!-- Vue 3 Global Build (prod) — must load before app.js module -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 </head>
 <body>
@@ -31,309 +31,29 @@
                 <h2>{{ pageTitle }}</h2>
             </header>
             <section id="content">
-                <!-- Agents Dashboard -->
-                <div v-if="currentSection === 'agents'" class="agents-grid">
-                    <div v-if="loading" class="loading">Loading agents...</div>
-                    <div v-else-if="agents.length === 0" class="empty-state">
-                        <p>No agents detected.</p>
-                    </div>
-                    <div v-for="agent in agents" :key="agent.id" class="agent-card" :class="{ 'not-installed': agent.installed === false, 'skeleton': agent._skeleton }">
-                        <div class="agent-card-header">
-                            <img class="agent-icon" :src="getAgentIcon(agent.id)" :alt="agent.name" @error="$event.target.style.display='none'">
-                            <h3>{{ agent.name }}</h3>
-                            <span class="badge" :class="agent._skeleton ? 'badge-unknown' : agent.installed ? 'badge-installed' : 'badge-not-installed'">
-                                {{ agent._skeleton ? 'Detecting...' : agent.installed ? 'Installed' : 'Not Installed' }}
-                            </span>
-                        </div>
-                        <div class="agent-card-body">
-                            <p class="agent-version" v-if="agent.version">Version: {{ agent.version }}</p>
-                            <p class="agent-id">ID: <code>{{ agent.id }}</code></p>
-                            <div class="capabilities">
-                                <span v-for="cap in agent.capabilities" :key="cap" class="cap-tag">{{ cap }}</span>
-                            </div>
-                            <!-- Usage info for installed agents -->
-                            <div v-if="agent.installed && usage[agent.id]" class="agent-usage">
-                                <template v-if="usage[agent.id].available">
-                                    <div class="usage-row" v-if="usage[agent.id].tokens">
-                                        <span class="usage-label">Tokens:</span>
-                                        <span>{{ formatTokens(usage[agent.id].tokens.input) }} in / {{ formatTokens(usage[agent.id].tokens.output) }} out</span>
-                                    </div>
-                                    <div class="usage-row" v-if="usage[agent.id].cost">
-                                        <span class="usage-label">Est. cost:</span>
-                                        <span>${{ usage[agent.id].cost.estimated.toFixed(4) }}</span>
-                                    </div>
-                                    <div class="usage-row" v-if="usage[agent.id].sessions">
-                                        <span class="usage-label">Sessions:</span>
-                                        <span>{{ usage[agent.id].sessions }}</span>
-                                    </div>
-                                    <div class="usage-row" v-if="usage[agent.id].lastActive">
-                                        <span class="usage-label">Last active:</span>
-                                        <span>{{ new Date(usage[agent.id].lastActive).toLocaleDateString() }}</span>
-                                    </div>
-                                </template>
-                                <div v-else class="no-usage">No usage data available</div>
-                            </div>
-                        </div>
-                        <div class="agent-card-footer">
-                            <button @click="selectAgent(agent)" class="btn-secondary">Details</button>
-                            <!-- Install button for non-installed agents -->
-                            <template v-if="!agent.installed">
-                                <button
-                                    v-if="!installResults[agent.id]"
-                                    @click="installAgent(agent.id)"
-                                    class="btn-primary"
-                                    :disabled="installingAgents.has(agent.id)">
-                                    {{ installingAgents.has(agent.id) ? '⏳ Installing...' : '⬇ Install' }}
-                                </button>
-                                <span v-if="installResults[agent.id]?.success" class="badge badge-success">✓ Installed</span>
-                                <a v-if="installResults[agent.id]?.downloadUrl" :href="installResults[agent.id].downloadUrl" target="_blank" rel="noopener" class="btn-secondary">⬇ Download</a>
-                                <span v-if="installResults[agent.id] && !installResults[agent.id].success && !installResults[agent.id].downloadUrl" class="badge badge-error">✗ Failed</span>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Updates Page -->
-                <div v-else-if="currentSection === 'updates'" class="updates-page">
-                    <div class="updates-toolbar">
-                        <button @click="fetchUpdates" class="btn-primary" :disabled="updatesLoading">
-                            {{ updatesLoading ? 'Checking...' : '🔄 Check for Updates' }}
-                        </button>
-                        <button v-if="updatesAvailableCount > 0" @click="updateAll" class="btn-success" :disabled="isUpdatingAny">
-                            {{ isUpdatingAny ? 'Updating...' : `⬆️ Update All (${updatesAvailableCount})` }}
-                        </button>
-                    </div>
-
-                    <div v-if="updatesError" class="error-banner">{{ updatesError }}</div>
-
-                    <div v-if="updatesLoading && updates.length === 0" class="loading">Checking for updates...</div>
-
-                    <table v-if="updates.length > 0" class="updates-table">
-                        <thead>
-                            <tr>
-                                <th>Agent</th>
-                                <th>Current</th>
-                                <th>Latest</th>
-                                <th>Status</th>
-                                <th>Update Command</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="u in updates" :key="u.agentId" :class="{ 'update-available': u.hasUpdate }">
-                                <td class="agent-name-cell">
-                                    <img class="agent-icon-sm" :src="getAgentIcon(u.agentId)" :alt="u.agentName" @error="$event.target.style.display='none'">
-                                    {{ u.agentName }}
-                                </td>
-                                <td><code>{{ u.currentVersion ?? '—' }}</code></td>
-                                <td><code>{{ u.latestVersion ?? '—' }}</code></td>
-                                <td>
-                                    <span v-if="updateResults[u.agentId] === 'success'" class="badge badge-success">✓ Updated</span>
-                                    <span v-else-if="updateResults[u.agentId] === 'failed'" class="badge badge-error">✗ Failed</span>
-                                    <span v-else-if="updatingAgents.has(u.agentId)" class="badge badge-updating">⏳ Updating...</span>
-                                    <span v-else-if="u.hasUpdate" class="badge badge-update">⬆ Update available</span>
-                                    <span v-else-if="u.latestVersion" class="badge badge-ok">✓ Up to date</span>
-                                    <span v-else class="badge badge-unknown">? Unknown</span>
-                                </td>
-                                <td><code v-if="u.updateCommand" class="update-cmd">{{ u.updateCommand }}</code><span v-else>—</span></td>
-                                <td>
-                                    <button v-if="u.hasUpdate && !updatingAgents.has(u.agentId)" @click="updateAgent(u.agentId)" class="btn-sm btn-primary" :disabled="isUpdatingAny">
-                                        Update
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div v-if="!updatesLoading && updates.length > 0 && updatesAvailableCount === 0 && Object.keys(updateResults).length === 0" class="all-good">
-                        ✅ All agents are up to date!
-                    </div>
-                </div>
-
-                <!-- Rules Page -->
-                <div v-else-if="currentSection === 'rules'" class="rules-page">
-                    <div class="scope-toggle">
-                        <button :class="rulesScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="rulesScope = 'project'; fetchRules('project')">Project</button>
-                        <button :class="rulesScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="rulesScope = 'global'; fetchRules('global')">Global</button>
-                    </div>
-
-                    <div v-if="rulesLoading" class="loading">Loading rules...</div>
-                    <div v-else-if="rules.length === 0" class="empty-state">
-                        <p>No rules found for <strong>{{ rulesScope }}</strong> scope.</p>
-                    </div>
-                    <div v-else class="rules-list">
-                        <div v-for="rule in rules" :key="rule.name" class="rule-item">
-                            <div class="rule-item-header">
-                                <span class="rule-name">{{ rule.name }}</span>
-                                <code class="rule-source">{{ rule.source }}</code>
-                            </div>
-                            <pre class="rule-preview">{{ rule.content.length > 300 ? rule.content.substring(0, 300) + '…' : rule.content }}</pre>
-                        </div>
-                    </div>
-
-                    <div class="sync-panel">
-                        <div class="sync-panel-header">
-                            <h3>Sync to Agents</h3>
-                            <button @click="syncRules()" class="btn-success" :disabled="rulesSyncing.size > 0">
-                                {{ rulesSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
-                            </button>
-                            <span v-if="rulesSyncResult['__all']?.success" class="badge badge-success">✓ All synced</span>
-                            <span v-if="rulesSyncResult['__all']?.error" class="badge badge-error">✗ {{ rulesSyncResult['__all'].error }}</span>
-                        </div>
-                        <div v-if="rulesAgents.length === 0" class="empty-state-sm">No agents with rules capability detected.</div>
-                        <div v-for="agent in rulesAgents" :key="agent.id" class="sync-agent-row">
-                            <img class="agent-icon-sm" :src="getAgentIcon(agent.id)" :alt="agent.name" @error="$event.target.style.display='none'">
-                            <span class="sync-agent-name">{{ agent.name }}</span>
-                            <div class="sync-agent-actions">
-                                <button @click="syncRules(agent.id)" class="btn-sm btn-primary" :disabled="rulesSyncing.has(agent.id)">
-                                    {{ rulesSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
-                                </button>
-                                <button @click="fetchRulesDiff(agent.id)" class="btn-sm btn-secondary">Diff</button>
-                                <span v-if="rulesSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
-                                <span v-if="rulesSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
-                            </div>
-                        </div>
-                        <div v-for="(diff, agentId) in rulesDiff" :key="agentId" class="diff-result">
-                            <div class="diff-header">
-                                <strong>Diff: {{ agentId }}</strong>
-                                <span v-if="!diff.hasChanges" class="badge badge-ok">No changes</span>
-                                <span v-else class="badge badge-update">Changes detected</span>
-                            </div>
-                            <div v-if="diff.hasChanges" class="diff-body">
-                                <div class="diff-section diff-current">
-                                    <div class="diff-label">Current:</div>
-                                    <pre>{{ diff.current ?? '(empty)' }}</pre>
-                                </div>
-                                <div class="diff-section diff-desired">
-                                    <div class="diff-label">Desired:</div>
-                                    <pre>{{ diff.desired }}</pre>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Skills Page -->
-                <div v-else-if="currentSection === 'skills'" class="skills-page">
-                    <div class="scope-toggle">
-                        <button :class="skillsScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="skillsScope = 'project'; fetchSkills('project')">Project</button>
-                        <button :class="skillsScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="skillsScope = 'global'; fetchSkills('global')">Global</button>
-                    </div>
-
-                    <div v-if="skillsLoading" class="loading">Loading skills...</div>
-                    <div v-else-if="skills.length === 0" class="empty-state">
-                        <p>No skills found for <strong>{{ skillsScope }}</strong> scope.</p>
-                    </div>
-                    <div v-else class="skills-grid">
-                        <div v-for="skill in skills" :key="skill.name" class="skill-card">
-                            <div class="skill-name">{{ skill.name }}</div>
-                            <code class="skill-source">{{ skill.source }}</code>
-                        </div>
-                    </div>
-
-                    <div class="sync-panel">
-                        <div class="sync-panel-header">
-                            <h3>Sync to Agents</h3>
-                            <button @click="syncSkills()" class="btn-success" :disabled="skillsSyncing.size > 0">
-                                {{ skillsSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
-                            </button>
-                            <span v-if="skillsSyncResult['__all']?.success" class="badge badge-success">✓ All synced</span>
-                            <span v-if="skillsSyncResult['__all']?.error" class="badge badge-error">✗ {{ skillsSyncResult['__all'].error }}</span>
-                        </div>
-                        <div v-if="skillsAgents.length === 0" class="empty-state-sm">No agents with skills capability detected.</div>
-                        <div v-for="agent in skillsAgents" :key="agent.id" class="sync-agent-row">
-                            <img class="agent-icon-sm" :src="getAgentIcon(agent.id)" :alt="agent.name" @error="$event.target.style.display='none'">
-                            <span class="sync-agent-name">{{ agent.name }}</span>
-                            <div class="sync-agent-actions">
-                                <button @click="syncSkills(agent.id)" class="btn-sm btn-primary" :disabled="skillsSyncing.has(agent.id)">
-                                    {{ skillsSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
-                                </button>
-                                <button @click="fetchSkillsDiff(agent.id)" class="btn-sm btn-secondary">Diff</button>
-                                <span v-if="skillsSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
-                                <span v-if="skillsSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
-                            </div>
-                        </div>
-                        <div v-for="(diff, agentId) in skillsDiff" :key="agentId" class="diff-result">
-                            <div class="diff-header">
-                                <strong>Diff: {{ agentId }}</strong>
-                                <span v-if="!diff.hasChanges" class="badge badge-ok">No changes</span>
-                                <span v-else class="badge badge-update">Changes detected</span>
-                            </div>
-                            <div v-if="diff.hasChanges" class="diff-body diff-skills">
-                                <div v-if="diff.added.length" class="diff-added">
-                                    <span class="diff-label">+ Added:</span> {{ diff.added.join(', ') }}
-                                </div>
-                                <div v-if="diff.removed.length" class="diff-removed">
-                                    <span class="diff-label">- Removed:</span> {{ diff.removed.join(', ') }}
-                                </div>
-                                <div v-if="diff.modified.length" class="diff-modified">
-                                    <span class="diff-label">~ Modified:</span> {{ diff.modified.join(', ') }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MCP Page -->
-                <div v-else-if="currentSection === 'mcp'" class="mcp-page">
-                    <div class="scope-toggle">
-                        <button :class="mcpScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="mcpScope = 'global'; fetchMcpServers('global')">Global</button>
-                        <button :class="mcpScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="mcpScope = 'project'; fetchMcpServers('project')">Project</button>
-                    </div>
-
-                    <div v-if="mcpLoading" class="loading">Loading MCP servers...</div>
-                    <div v-else-if="mcpServers.length === 0" class="empty-state">
-                        <p>No MCP servers configured for <strong>{{ mcpScope }}</strong> scope.</p>
-                    </div>
-                    <table v-else class="mcp-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Transport</th>
-                                <th>Command / URL</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="server in mcpServers" :key="server.name" :class="{ 'mcp-disabled': server.disabled }">
-                                <td class="mcp-name">{{ server.name }}</td>
-                                <td><span class="badge badge-transport">{{ server.transport }}</span></td>
-                                <td>
-                                    <code v-if="server.command">{{ server.command }}{{ server.args ? ' ' + server.args.join(' ') : '' }}</code>
-                                    <code v-else-if="server.url">{{ server.url }}</code>
-                                    <span v-else>—</span>
-                                </td>
-                                <td>
-                                    <span v-if="server.disabled" class="badge badge-unknown">Disabled</span>
-                                    <span v-else class="badge badge-ok">Active</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="sync-panel">
-                        <div class="sync-panel-header">
-                            <h3>Sync to Agents</h3>
-                            <button @click="syncMcpAll()" class="btn-success" :disabled="mcpSyncing.size > 0">
-                                {{ mcpSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
-                            </button>
-                        </div>
-                        <div v-if="mcpAgents.length === 0" class="empty-state-sm">No agents with MCP capability detected.</div>
-                        <div v-for="agent in mcpAgents" :key="agent.id" class="sync-agent-row">
-                            <img class="agent-icon-sm" :src="getAgentIcon(agent.id)" :alt="agent.name" @error="$event.target.style.display='none'">
-                            <span class="sync-agent-name">{{ agent.name }}</span>
-                            <div class="sync-agent-actions">
-                                <button @click="syncMcp(agent.id)" class="btn-sm btn-primary" :disabled="mcpSyncing.has(agent.id)">
-                                    {{ mcpSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
-                                </button>
-                                <span v-if="mcpSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
-                                <span v-if="mcpSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section Placeholders -->
+                <agents-page
+                    v-if="currentSection === 'agents'"
+                    :agents="agents"
+                    :loading="loading"
+                    :usage="usage"
+                    :installing-agents="installingAgents"
+                    :install-results="installResults"
+                    @select-agent="selectedAgent = $event"
+                    @install-agent="installAgent($event)"
+                />
+                <updates-page v-else-if="currentSection === 'updates'" />
+                <rules-page
+                    v-else-if="currentSection === 'rules'"
+                    :agents="rulesAgents"
+                />
+                <skills-page
+                    v-else-if="currentSection === 'skills'"
+                    :agents="skillsAgents"
+                />
+                <mcp-page
+                    v-else-if="currentSection === 'mcp'"
+                    :agents="mcpAgents"
+                />
                 <div v-else class="placeholder">
                     <p>Section <strong>{{ currentSection }}</strong> is coming soon.</p>
                 </div>
@@ -341,49 +61,12 @@
         </main>
 
         <!-- Agent Detail Modal -->
-        <div v-if="selectedAgent" class="modal-overlay" @click.self="selectedAgent = null">
-            <div class="modal">
-                <header class="modal-header">
-                    <h3>{{ selectedAgent.name }} Details</h3>
-                    <button @click="selectedAgent = null" class="btn-close">&times;</button>
-                </header>
-                <div class="modal-body">
-                    <div class="detail-row">
-                        <span class="label">ID:</span>
-                        <span class="value"><code>{{ selectedAgent.id }}</code></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Status:</span>
-                        <span class="value">{{ selectedAgent.installed ? 'Installed' : 'Not Installed' }}</span>
-                    </div>
-                    <div class="detail-row" v-if="selectedAgent.version">
-                        <span class="label">Version:</span>
-                        <span class="value">{{ selectedAgent.version }}</span>
-                    </div>
-                    <div class="detail-row" v-if="selectedAgent.binaryPath">
-                        <span class="label">Binary Path:</span>
-                        <span class="value"><code>{{ selectedAgent.binaryPath }}</code></span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Config Format:</span>
-                        <span class="value">{{ selectedAgent.configFormat }}</span>
-                    </div>
-                    <div class="detail-section">
-                        <h4>Config Paths</h4>
-                        <ul>
-                            <li v-for="path in selectedAgent.configPaths" :key="path"><code>{{ path }}</code></li>
-                        </ul>
-                    </div>
-                    <div class="detail-section">
-                        <h4>Capabilities</h4>
-                        <div class="capabilities">
-                            <span v-for="cap in selectedAgent.capabilities" :key="cap" class="cap-tag">{{ cap }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <agent-modal
+            v-if="selectedAgent"
+            :agent="selectedAgent"
+            @close="selectedAgent = null"
+        />
     </div>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 </html>
