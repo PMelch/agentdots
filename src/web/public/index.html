@@ -58,6 +58,63 @@
                     </div>
                 </div>
 
+                <!-- Updates Page -->
+                <div v-else-if="currentSection === 'updates'" class="updates-page">
+                    <div class="updates-toolbar">
+                        <button @click="fetchUpdates" class="btn-primary" :disabled="updatesLoading">
+                            {{ updatesLoading ? 'Checking...' : '🔄 Check for Updates' }}
+                        </button>
+                        <button v-if="updatesAvailableCount > 0" @click="updateAll" class="btn-success" :disabled="isUpdatingAny">
+                            {{ isUpdatingAny ? 'Updating...' : `⬆️ Update All (${updatesAvailableCount})` }}
+                        </button>
+                    </div>
+
+                    <div v-if="updatesError" class="error-banner">{{ updatesError }}</div>
+
+                    <div v-if="updatesLoading && updates.length === 0" class="loading">Checking for updates...</div>
+
+                    <table v-if="updates.length > 0" class="updates-table">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Current</th>
+                                <th>Latest</th>
+                                <th>Status</th>
+                                <th>Update Command</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="u in updates" :key="u.agentId" :class="{ 'update-available': u.hasUpdate }">
+                                <td class="agent-name-cell">
+                                    <span class="agent-icon-sm">{{ getAgentIcon(u.agentId) }}</span>
+                                    {{ u.agentName }}
+                                </td>
+                                <td><code>{{ u.currentVersion ?? '—' }}</code></td>
+                                <td><code>{{ u.latestVersion ?? '—' }}</code></td>
+                                <td>
+                                    <span v-if="updateResults[u.agentId] === 'success'" class="badge badge-success">✓ Updated</span>
+                                    <span v-else-if="updateResults[u.agentId] === 'failed'" class="badge badge-error">✗ Failed</span>
+                                    <span v-else-if="updatingAgents.has(u.agentId)" class="badge badge-updating">⏳ Updating...</span>
+                                    <span v-else-if="u.hasUpdate" class="badge badge-update">⬆ Update available</span>
+                                    <span v-else-if="u.latestVersion" class="badge badge-ok">✓ Up to date</span>
+                                    <span v-else class="badge badge-unknown">? Unknown</span>
+                                </td>
+                                <td><code v-if="u.updateCommand" class="update-cmd">{{ u.updateCommand }}</code><span v-else>—</span></td>
+                                <td>
+                                    <button v-if="u.hasUpdate && !updatingAgents.has(u.agentId)" @click="updateAgent(u.agentId)" class="btn-sm btn-primary" :disabled="isUpdatingAny">
+                                        Update
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div v-if="!updatesLoading && updates.length > 0 && updatesAvailableCount === 0 && Object.keys(updateResults).length === 0" class="all-good">
+                        ✅ All agents are up to date!
+                    </div>
+                </div>
+
                 <!-- Section Placeholders -->
                 <div v-else class="placeholder">
                     <p>Section <strong>{{ currentSection }}</strong> is coming soon.</p>
