@@ -2,7 +2,7 @@ export const AGENT_ICONS = {
   "claude-code": "icons/claude-code.ico",
   "cursor": "icons/cursor.ico",
   "copilot": "icons/copilot.ico",
-  "gemini": "icons/gemini.ico",
+  "gemini": "icons/gemini.svg",
   "codex": "icons/codex.ico",
   "opencode": "icons/opencode.ico",
   "aider": "icons/aider.png",
