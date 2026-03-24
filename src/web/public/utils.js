@@ -7,7 +7,7 @@ export const AGENT_ICONS = {
   "opencode": "icons/opencode.ico",
   "aider": "icons/aider.ico",
   "windsurf": "icons/windsurf.ico",
-  "cline": "icons/cline.ico",
+  "cline": "icons/cline.png",
   "roo-code": "icons/roo-code.ico",
   "zed": "icons/zed.ico",
   "pi": "icons/pi.svg",
