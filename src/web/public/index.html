@@ -150,6 +150,189 @@
                     </div>
                 </div>
 
+                <!-- Rules Page -->
+                <div v-else-if="currentSection === 'rules'" class="rules-page">
+                    <div class="scope-toggle">
+                        <button :class="rulesScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="rulesScope = 'project'; fetchRules('project')">Project</button>
+                        <button :class="rulesScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="rulesScope = 'global'; fetchRules('global')">Global</button>
+                    </div>
+
+                    <div v-if="rulesLoading" class="loading">Loading rules...</div>
+                    <div v-else-if="rules.length === 0" class="empty-state">
+                        <p>No rules found for <strong>{{ rulesScope }}</strong> scope.</p>
+                    </div>
+                    <div v-else class="rules-list">
+                        <div v-for="rule in rules" :key="rule.name" class="rule-item">
+                            <div class="rule-item-header">
+                                <span class="rule-name">{{ rule.name }}</span>
+                                <code class="rule-source">{{ rule.source }}</code>
+                            </div>
+                            <pre class="rule-preview">{{ rule.content.length > 300 ? rule.content.substring(0, 300) + '…' : rule.content }}</pre>
+                        </div>
+                    </div>
+
+                    <div class="sync-panel">
+                        <div class="sync-panel-header">
+                            <h3>Sync to Agents</h3>
+                            <button @click="syncRules()" class="btn-success" :disabled="rulesSyncing.size > 0">
+                                {{ rulesSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
+                            </button>
+                            <span v-if="rulesSyncResult['__all']?.success" class="badge badge-success">✓ All synced</span>
+                            <span v-if="rulesSyncResult['__all']?.error" class="badge badge-error">✗ {{ rulesSyncResult['__all'].error }}</span>
+                        </div>
+                        <div v-if="rulesAgents.length === 0" class="empty-state-sm">No agents with rules capability detected.</div>
+                        <div v-for="agent in rulesAgents" :key="agent.id" class="sync-agent-row">
+                            <span class="agent-icon-sm">{{ getAgentIcon(agent.id) }}</span>
+                            <span class="sync-agent-name">{{ agent.name }}</span>
+                            <div class="sync-agent-actions">
+                                <button @click="syncRules(agent.id)" class="btn-sm btn-primary" :disabled="rulesSyncing.has(agent.id)">
+                                    {{ rulesSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
+                                </button>
+                                <button @click="fetchRulesDiff(agent.id)" class="btn-sm btn-secondary">Diff</button>
+                                <span v-if="rulesSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
+                                <span v-if="rulesSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
+                            </div>
+                        </div>
+                        <div v-for="(diff, agentId) in rulesDiff" :key="agentId" class="diff-result">
+                            <div class="diff-header">
+                                <strong>Diff: {{ agentId }}</strong>
+                                <span v-if="!diff.hasChanges" class="badge badge-ok">No changes</span>
+                                <span v-else class="badge badge-update">Changes detected</span>
+                            </div>
+                            <div v-if="diff.hasChanges" class="diff-body">
+                                <div class="diff-section diff-current">
+                                    <div class="diff-label">Current:</div>
+                                    <pre>{{ diff.current ?? '(empty)' }}</pre>
+                                </div>
+                                <div class="diff-section diff-desired">
+                                    <div class="diff-label">Desired:</div>
+                                    <pre>{{ diff.desired }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skills Page -->
+                <div v-else-if="currentSection === 'skills'" class="skills-page">
+                    <div class="scope-toggle">
+                        <button :class="skillsScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="skillsScope = 'project'; fetchSkills('project')">Project</button>
+                        <button :class="skillsScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="skillsScope = 'global'; fetchSkills('global')">Global</button>
+                    </div>
+
+                    <div v-if="skillsLoading" class="loading">Loading skills...</div>
+                    <div v-else-if="skills.length === 0" class="empty-state">
+                        <p>No skills found for <strong>{{ skillsScope }}</strong> scope.</p>
+                    </div>
+                    <div v-else class="skills-grid">
+                        <div v-for="skill in skills" :key="skill.name" class="skill-card">
+                            <div class="skill-name">{{ skill.name }}</div>
+                            <code class="skill-source">{{ skill.source }}</code>
+                        </div>
+                    </div>
+
+                    <div class="sync-panel">
+                        <div class="sync-panel-header">
+                            <h3>Sync to Agents</h3>
+                            <button @click="syncSkills()" class="btn-success" :disabled="skillsSyncing.size > 0">
+                                {{ skillsSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
+                            </button>
+                            <span v-if="skillsSyncResult['__all']?.success" class="badge badge-success">✓ All synced</span>
+                            <span v-if="skillsSyncResult['__all']?.error" class="badge badge-error">✗ {{ skillsSyncResult['__all'].error }}</span>
+                        </div>
+                        <div v-if="skillsAgents.length === 0" class="empty-state-sm">No agents with skills capability detected.</div>
+                        <div v-for="agent in skillsAgents" :key="agent.id" class="sync-agent-row">
+                            <span class="agent-icon-sm">{{ getAgentIcon(agent.id) }}</span>
+                            <span class="sync-agent-name">{{ agent.name }}</span>
+                            <div class="sync-agent-actions">
+                                <button @click="syncSkills(agent.id)" class="btn-sm btn-primary" :disabled="skillsSyncing.has(agent.id)">
+                                    {{ skillsSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
+                                </button>
+                                <button @click="fetchSkillsDiff(agent.id)" class="btn-sm btn-secondary">Diff</button>
+                                <span v-if="skillsSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
+                                <span v-if="skillsSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
+                            </div>
+                        </div>
+                        <div v-for="(diff, agentId) in skillsDiff" :key="agentId" class="diff-result">
+                            <div class="diff-header">
+                                <strong>Diff: {{ agentId }}</strong>
+                                <span v-if="!diff.hasChanges" class="badge badge-ok">No changes</span>
+                                <span v-else class="badge badge-update">Changes detected</span>
+                            </div>
+                            <div v-if="diff.hasChanges" class="diff-body diff-skills">
+                                <div v-if="diff.added.length" class="diff-added">
+                                    <span class="diff-label">+ Added:</span> {{ diff.added.join(', ') }}
+                                </div>
+                                <div v-if="diff.removed.length" class="diff-removed">
+                                    <span class="diff-label">- Removed:</span> {{ diff.removed.join(', ') }}
+                                </div>
+                                <div v-if="diff.modified.length" class="diff-modified">
+                                    <span class="diff-label">~ Modified:</span> {{ diff.modified.join(', ') }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MCP Page -->
+                <div v-else-if="currentSection === 'mcp'" class="mcp-page">
+                    <div class="scope-toggle">
+                        <button :class="mcpScope === 'global' ? 'btn-primary' : 'btn-secondary'" @click="mcpScope = 'global'; fetchMcpServers('global')">Global</button>
+                        <button :class="mcpScope === 'project' ? 'btn-primary' : 'btn-secondary'" @click="mcpScope = 'project'; fetchMcpServers('project')">Project</button>
+                    </div>
+
+                    <div v-if="mcpLoading" class="loading">Loading MCP servers...</div>
+                    <div v-else-if="mcpServers.length === 0" class="empty-state">
+                        <p>No MCP servers configured for <strong>{{ mcpScope }}</strong> scope.</p>
+                    </div>
+                    <table v-else class="mcp-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Transport</th>
+                                <th>Command / URL</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="server in mcpServers" :key="server.name" :class="{ 'mcp-disabled': server.disabled }">
+                                <td class="mcp-name">{{ server.name }}</td>
+                                <td><span class="badge badge-transport">{{ server.transport }}</span></td>
+                                <td>
+                                    <code v-if="server.command">{{ server.command }}{{ server.args ? ' ' + server.args.join(' ') : '' }}</code>
+                                    <code v-else-if="server.url">{{ server.url }}</code>
+                                    <span v-else>—</span>
+                                </td>
+                                <td>
+                                    <span v-if="server.disabled" class="badge badge-unknown">Disabled</span>
+                                    <span v-else class="badge badge-ok">Active</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="sync-panel">
+                        <div class="sync-panel-header">
+                            <h3>Sync to Agents</h3>
+                            <button @click="syncMcpAll()" class="btn-success" :disabled="mcpSyncing.size > 0">
+                                {{ mcpSyncing.size > 0 ? 'Syncing...' : 'Sync All' }}
+                            </button>
+                        </div>
+                        <div v-if="mcpAgents.length === 0" class="empty-state-sm">No agents with MCP capability detected.</div>
+                        <div v-for="agent in mcpAgents" :key="agent.id" class="sync-agent-row">
+                            <span class="agent-icon-sm">{{ getAgentIcon(agent.id) }}</span>
+                            <span class="sync-agent-name">{{ agent.name }}</span>
+                            <div class="sync-agent-actions">
+                                <button @click="syncMcp(agent.id)" class="btn-sm btn-primary" :disabled="mcpSyncing.has(agent.id)">
+                                    {{ mcpSyncing.has(agent.id) ? 'Syncing...' : 'Sync' }}
+                                </button>
+                                <span v-if="mcpSyncResult[agent.id]?.success" class="badge badge-success">✓ Synced</span>
+                                <span v-if="mcpSyncResult[agent.id]?.error" class="badge badge-error">✗ Failed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Section Placeholders -->
                 <div v-else class="placeholder">
                     <p>Section <strong>{{ currentSection }}</strong> is coming soon.</p>
