@@ -40,20 +40,20 @@
                     :install-results="installResults"
                     @select-agent="selectedAgent = $event"
                     @install-agent="installAgent($event)"
-                />
-                <updates-page v-else-if="currentSection === 'updates'" />
+                ></agents-page>
+                <updates-page v-else-if="currentSection === 'updates'"></updates-page>
                 <rules-page
                     v-else-if="currentSection === 'rules'"
                     :agents="rulesAgents"
-                />
+                ></rules-page>
                 <skills-page
                     v-else-if="currentSection === 'skills'"
                     :agents="skillsAgents"
-                />
+                ></skills-page>
                 <mcp-page
                     v-else-if="currentSection === 'mcp'"
                     :agents="mcpAgents"
-                />
+                ></mcp-page>
                 <div v-else class="placeholder">
                     <p>Section <strong>{{ currentSection }}</strong> is coming soon.</p>
                 </div>
@@ -65,7 +65,7 @@
             v-if="selectedAgent"
             :agent="selectedAgent"
             @close="selectedAgent = null"
-        />
+        ></agent-modal>
     </div>
     <script type="module" src="app.js"></script>
 </body>
