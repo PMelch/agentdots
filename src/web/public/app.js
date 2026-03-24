@@ -1,17 +1,18 @@
 const { createApp, ref, computed, onMounted, watch } = Vue;
 
 const AGENT_ICONS = {
-  "claude-code": "🤖",
-  "cursor": "🖱️",
-  "copilot": "✈️",
-  "gemini": "♊",
-  "codex": "📝",
-  "opencode": "🔓",
-  "aider": "🧑💻",
-  "windsurf": "🏄",
-  "cline": "📟",
-  "roo-code": "🦘",
-  "zed": "⚡",
+  "claude-code": "https://claude.ai/favicon.ico",
+  "cursor": "https://www.cursor.com/favicon.ico",
+  "copilot": "https://github.com/favicon.ico",
+  "gemini": "https://gemini.google.com/favicon.ico",
+  "codex": "https://openai.com/favicon.ico",
+  "opencode": "https://opencode.ai/favicon.ico",
+  "aider": "https://aider.chat/assets/favicon.ico",
+  "windsurf": "https://windsurf.com/favicon.ico",
+  "cline": "https://cline.bot/favicon.ico",
+  "roo-code": "https://roocode.com/favicon.ico",
+  "zed": "https://zed.dev/favicon.ico",
+  "pi": "https://pi.dev/favicon.ico",
 };
 
 const PAGE_TITLES = {

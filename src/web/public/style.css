@@ -144,7 +144,10 @@ main {
 }
 
 .agent-icon {
-  font-size: 2rem;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 .agent-card-header h3 {
@@ -377,7 +380,12 @@ code {
 }
 
 .agent-icon-sm {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
   margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 2px;
 }
 
 .update-cmd {
