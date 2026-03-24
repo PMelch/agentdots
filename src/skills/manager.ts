@@ -9,10 +9,20 @@ const MANIFEST_FILE = ".agentdots-managed-skills.json";
 async function listDirectories(dir: string): Promise<string[]> {
   try {
     const entries = await readdir(dir, { withFileTypes: true });
-    return entries
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => entry.name)
-      .sort();
+    const dirs: string[] = [];
+    for (const entry of entries) {
+      // Follow symlinks: isDirectory() returns false for symlinks,
+      // so we stat the full path to check the target
+      if (entry.isDirectory() || entry.isSymbolicLink()) {
+        try {
+          const s = await stat(join(dir, entry.name));
+          if (s.isDirectory()) dirs.push(entry.name);
+        } catch {
+          // broken symlink, skip
+        }
+      }
+    }
+    return dirs.sort();
   } catch {
     return [];
   }
