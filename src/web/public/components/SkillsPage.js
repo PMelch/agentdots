@@ -21,6 +21,15 @@ export default {
     const skillsSyncResult = ref({});
     const skillsSyncing = ref(new Set());
 
+    // Marketplace state
+    const marketQuery = ref("");
+    const marketResults = ref([]);
+    const marketLoading = ref(false);
+    const directUrl = ref("");
+    const installScope = ref("global");
+    const installing = ref(null);
+    const installResult = ref(null);
+
     async function fetchSkills(scope) {
       skillsLoading.value = true;
       try {
@@ -62,12 +71,55 @@ export default {
       }
     }
 
+    async function searchMarket() {
+      marketLoading.value = true;
+      installResult.value = null;
+      try {
+        const q = encodeURIComponent(marketQuery.value);
+        const res = await fetch(`/api/marketplace/skills?q=${q}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        marketResults.value = await res.json();
+      } catch {
+        marketResults.value = [];
+      } finally {
+        marketLoading.value = false;
+      }
+    }
+
+    async function installSkill(url, path) {
+      installing.value = url;
+      installResult.value = null;
+      try {
+        const res = await fetch("/api/marketplace/skills/install", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, scope: installScope.value, path }),
+        });
+        const result = await res.json();
+        installResult.value = result;
+        if (result.success) fetchSkills(skillsScope.value);
+      } catch (err) {
+        installResult.value = { error: err.message };
+      } finally {
+        installing.value = null;
+      }
+    }
+
+    async function installFromUrl() {
+      const url = directUrl.value.trim();
+      if (!url) return;
+      await installSkill(url, undefined);
+      directUrl.value = "";
+    }
+
     watch(skillsScope, (scope) => fetchSkills(scope));
     onMounted(() => fetchSkills(skillsScope.value));
 
     return {
       skills, skillsScope, skillsLoading, skillsDiff, skillsSyncResult, skillsSyncing,
       SCOPE_OPTIONS, fetchSkills, syncSkills, fetchSkillsDiff,
+      marketQuery, marketResults, marketLoading, directUrl, installScope,
+      installing, installResult, searchMarket, installSkill, installFromUrl,
     };
   },
   template: `
@@ -119,6 +171,69 @@ export default {
           </div>
         </template>
       </sync-panel>
+
+      <div class="marketplace-section">
+        <h3>Browse &amp; Install</h3>
+
+        <div class="marketplace-search">
+          <input
+            v-model="marketQuery"
+            placeholder="Search marketplace..."
+            @keyup.enter="searchMarket"
+            style="flex:1; margin-right:8px;"
+          />
+          <button @click="searchMarket" :disabled="marketLoading">
+            {{ marketLoading ? 'Searching…' : 'Search' }}
+          </button>
+        </div>
+
+        <div v-if="marketResults.length > 0" class="market-results" style="margin-top:12px;">
+          <div
+            v-for="skill in marketResults"
+            :key="skill.slug"
+            class="market-skill-card"
+            style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border,#eee);"
+          >
+            <div>
+              <strong>{{ skill.name }}</strong>
+              <span v-if="skill.description" style="margin-left:8px; color:#666;">{{ skill.description }}</span>
+            </div>
+            <button
+              @click="installSkill(skill.url, skill.path)"
+              :disabled="installing === skill.url"
+              style="margin-left:12px;"
+            >
+              {{ installing === skill.url ? 'Installing…' : 'Install' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="marketplace-direct" style="margin-top:20px;">
+          <h4 style="margin-bottom:8px;">Install from URL</h4>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <input
+              v-model="directUrl"
+              placeholder="https://github.com/user/skill-repo"
+              style="flex:1; min-width:240px;"
+            />
+            <select v-model="installScope">
+              <option value="global">Global</option>
+              <option value="project">Project</option>
+            </select>
+            <button @click="installFromUrl" :disabled="!directUrl.trim() || !!installing">
+              {{ installing ? 'Installing…' : 'Install' }}
+            </button>
+          </div>
+          <div
+            v-if="installResult"
+            :style="installResult.success ? 'color:green; margin-top:6px;' : 'color:red; margin-top:6px;'"
+          >
+            {{ installResult.success
+              ? '✓ Installed: ' + installResult.name
+              : '✗ ' + (installResult.error || 'Unknown error') }}
+          </div>
+        </div>
+      </div>
     </div>
   `,
 };

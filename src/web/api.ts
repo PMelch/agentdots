@@ -210,6 +210,48 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
       return sendJson(result);
     }
 
+    // --- Marketplace ---
+    if (path === "/api/marketplace/skills" && method === "GET") {
+      const query = url.searchParams.get("q") ?? "";
+      const { searchSkills, listAllSkills } = await import("../marketplace/index.js");
+      const results = query ? await searchSkills(query) : await listAllSkills();
+      return sendJson(results);
+    }
+
+    if (path === "/api/marketplace/skills/install" && method === "POST") {
+      const raw = await readBody(req);
+      const { url: skillUrl, scope, path: subPath, name } = JSON.parse(raw) as {
+        url?: string; scope?: string; path?: string; name?: string;
+      };
+      if (!skillUrl) return sendJson({ error: "Missing url" }, 400);
+      const { installFromGit, inferSkillName } = await import("../marketplace/index.js");
+      const skillScope = (scope ?? "global") as "global" | "project";
+      const skillsDir =
+        skillScope === "global"
+          ? join(homedir(), ".agentdots", "skills")
+          : join(".agentdots", "skills");
+      const skillName = name ?? inferSkillName(skillUrl, subPath);
+      try {
+        const installedTo = await installFromGit(skillUrl, {
+          targetDir: skillsDir,
+          path: subPath,
+          skillName,
+        });
+        return sendJson({ success: true, skillName, installedTo });
+      } catch (err: unknown) {
+        return sendJson({ success: false, error: err instanceof Error ? err.message : String(err) }, 500);
+      }
+    }
+
+    if (path.match(/^\/api\/marketplace\/skills\/[^/]+$/) && method === "DELETE") {
+      const name = path.split("/").pop();
+      const scope = (url.searchParams.get("scope") as "global" | "project") ?? "global";
+      if (!name) return sendJson({ error: "Missing skill name" }, 400);
+      const { uninstallSkill } = await import("../marketplace/index.js");
+      const result = await uninstallSkill(name, scope);
+      return sendJson(result);
+    }
+
     // --- Config (Placeholder for now) ---
     if (path === "/api/config") {
       if (method === "GET") {
@@ -233,6 +275,15 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: error.message }));
   }
+}
+
+function readBody(req: IncomingMessage): Promise<string> {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => resolve(body || "{}"));
+    req.on("error", reject);
+  });
 }
 
 // Helpers to instantiate managers with correct paths

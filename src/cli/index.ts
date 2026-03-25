@@ -3,6 +3,10 @@ import { Command } from "commander";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { readFile } from "node:fs/promises";
+import {
+  installFromGit,
+  readSources,
+} from "../marketplace/installer.js";
 import { registry } from "../agents/registry.js";
 import { McpManager } from "../mcp/manager.js";
 import { getMapper } from "../mcp/mapper.js";
@@ -379,6 +383,101 @@ skillsCmd
 
     if (!anyChanges) {
       console.log(`\nNo changes for ${agentId ?? "any agent"} (${scope}).`);
+    }
+  });
+
+skillsCmd
+  .command("update")
+  .description("Re-fetch installed marketplace skills from their source")
+  .option("-s, --scope <scope>", "Target scope: global or project", "global")
+  .action(async (opts: { scope: string }) => {
+    const scope = opts.scope as "global" | "project";
+    const skillsDir =
+      scope === "project"
+        ? join(".agentdots", "skills")
+        : join(homedir(), ".agentdots", "skills");
+
+    const sources = await readSources(scope);
+    if (sources.length === 0) {
+      console.log(`\nNo marketplace skills installed (${scope}).`);
+      return;
+    }
+
+    console.log(`\nUpdating ${sources.length} skill(s)...`);
+    for (const source of sources) {
+      try {
+        await installFromGit(source.url, {
+          path: source.path,
+          targetDir: skillsDir,
+          skillName: source.name,
+        });
+        console.log(`  ✓ ${source.name}`);
+      } catch (err: unknown) {
+        console.error(`  ✗ ${source.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  });
+
+// --- skills marketplace commands ---
+
+skillsCmd
+  .command("search <query>")
+  .description("Search for skills in the marketplace")
+  .action(async (query: string) => {
+    const { searchSkills } = await import("../marketplace/index.js");
+    console.log(`\nSearching for "${query}"...\n`);
+    const results = await searchSkills(query);
+    if (results.length === 0) {
+      console.log("No skills found.");
+      return;
+    }
+    const col = (s: string, w: number) => s.padEnd(w).slice(0, w);
+    console.log(`${col("NAME", 30)} ${col("AUTHOR", 20)} DESCRIPTION`);
+    console.log("-".repeat(80));
+    for (const s of results) {
+      console.log(`${col(s.name, 30)} ${col(s.author ?? "-", 20)} ${s.description.slice(0, 60)}`);
+    }
+    console.log(`\n${results.length} skill(s) found. Install with: agentdots skills install <url>`);
+  });
+
+skillsCmd
+  .command("install <url>")
+  .description("Install a skill from a git URL")
+  .option("-s, --scope <scope>", "Install scope: global or project", "global")
+  .option("-p, --path <path>", "Subdirectory within the repo")
+  .option("-n, --name <name>", "Override skill name")
+  .action(async (url: string, opts: { scope: string; path?: string; name?: string }) => {
+    const { installFromGit, inferSkillName } = await import("../marketplace/index.js");
+    const scope = opts.scope as "global" | "project";
+    const skillsDir = scope === "global"
+      ? join(homedir(), ".agentdots", "skills")
+      : join(".agentdots", "skills");
+    const skillName = opts.name ?? inferSkillName(url, opts.path);
+    console.log(`\nInstalling "${skillName}" from ${url}...`);
+    try {
+      const installedTo = await installFromGit(url, {
+        targetDir: skillsDir,
+        path: opts.path,
+        skillName: opts.name,
+      });
+      console.log(`✓ Installed to ${installedTo}`);
+    } catch (err: unknown) {
+      console.error(`✗ Failed: ${err instanceof Error ? err.message : err}`);
+      process.exit(1);
+    }
+  });
+
+skillsCmd
+  .command("remove <name>")
+  .description("Remove an installed skill")
+  .option("-s, --scope <scope>", "Scope: global or project", "global")
+  .action(async (name: string, opts: { scope: string }) => {
+    const { uninstallSkill } = await import("../marketplace/index.js");
+    const result = await uninstallSkill(name, opts.scope as "global" | "project");
+    if (result.success) {
+      console.log(`✓ Removed skill "${name}"`);
+    } else {
+      console.error(`✗ Failed to remove: ${result.error}`);
     }
   });
 
