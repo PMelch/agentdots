@@ -5,16 +5,13 @@ import { which, getVersion } from "../shell.js";
 
 export const aiderDetector: AgentDetector = {
   id: "aider",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("aider");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("aider") ?? undefined : undefined;
 
     return {
       id: "aider",
       name: "Aider",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), ".aider"),
@@ -23,5 +20,10 @@ export const aiderDetector: AgentDetector = {
       configFormat: "yaml",
       capabilities: ["rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("aider") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

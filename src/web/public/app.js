@@ -48,7 +48,28 @@ createApp({
     const skillsAgents = computed(() => agents.value.filter(a => a.capabilities?.includes("skills")));
     const mcpAgents = computed(() => agents.value.filter(a => a.capabilities?.includes("mcp")));
 
-    async function fetchAgents() {
+    function mergeAgentDetails(details) {
+      const detailMap = new Map(details.map((agent) => [agent.id, agent]));
+      agents.value = agents.value.map((agent) => detailMap.get(agent.id) ?? agent);
+      if (selectedAgent.value) {
+        selectedAgent.value = detailMap.get(selectedAgent.value.id) ?? selectedAgent.value;
+      }
+    }
+
+    async function fetchAgentDetails() {
+      const targets = agents.value.filter((agent) => agent.installed);
+      if (targets.length === 0) return;
+
+      const details = await Promise.all(targets.map(async (agent) => {
+        const res = await fetch(`/api/agents/${agent.id}`);
+        if (!res.ok) return agent;
+        return res.json();
+      }));
+
+      mergeAgentDetails(details);
+    }
+
+    async function fetchAgents(loadDetails = false) {
       loading.value = true;
       error.value = null;
       try {
@@ -68,6 +89,7 @@ createApp({
         const res = await fetch("/api/agents");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         agents.value = await res.json();
+        if (loadDetails) await fetchAgentDetails();
       } catch (err) {
         error.value = err.message;
       } finally {
@@ -100,7 +122,7 @@ createApp({
         const result = await res.json();
         installResults.value[agentId] = result;
         if (result.success) {
-          await fetchAgents();
+          await fetchAgents(currentSection.value === "agents");
           await fetchUsage();
         }
       } catch (err) {
@@ -115,17 +137,31 @@ createApp({
       window.location.hash = section;
     }
 
+    async function openAgent(agent) {
+      selectedAgent.value = agent;
+      if (agent.version || !agent.installed) return;
+
+      try {
+        const res = await fetch(`/api/agents/${agent.id}`);
+        if (!res.ok) return;
+        mergeAgentDetails([await res.json()]);
+      } catch {
+        // non-critical
+      }
+    }
+
     window.addEventListener("hashchange", () => {
       currentSection.value = getHashSection();
     });
 
     watch(currentSection, (section) => {
       if (section === "agents") fetchUsage();
-      if (section === "rules" || section === "skills" || section === "mcp") fetchAgents();
+      if (section === "agents") fetchAgents(true);
+      if (section === "rules" || section === "skills" || section === "mcp") fetchAgents(false);
     });
 
     onMounted(() => {
-      fetchAgents();
+      fetchAgents(currentSection.value === "agents");
       fetchUsage();
     });
 
@@ -135,6 +171,7 @@ createApp({
       loading,
       error,
       selectedAgent,
+      openAgent,
       pageTitle,
       navigate,
       installingAgents,

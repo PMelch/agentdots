@@ -5,16 +5,13 @@ import { which, getVersion } from "../shell.js";
 
 export const geminiDetector: AgentDetector = {
   id: "gemini",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("gemini");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("gemini") ?? undefined : undefined;
 
     return {
       id: "gemini",
       name: "Gemini CLI",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), ".gemini"),
@@ -23,5 +20,10 @@ export const geminiDetector: AgentDetector = {
       configFormat: "markdown",
       capabilities: ["rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("gemini") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

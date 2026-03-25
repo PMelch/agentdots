@@ -6,10 +6,9 @@ import { which, getVersion } from "../shell.js";
 
 export const zedDetector: AgentDetector = {
   id: "zed",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("zed");
     let installed = binaryPath !== null;
-    const version = installed ? await getVersion("zed") ?? undefined : undefined;
 
     if (!installed) {
       // Check known locations
@@ -33,7 +32,6 @@ export const zedDetector: AgentDetector = {
       id: "zed",
       name: "Zed",
       installed,
-      version,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), ".config", "zed", "settings.json"),
@@ -42,5 +40,10 @@ export const zedDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed && info.binaryPath ? await getVersion("zed") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

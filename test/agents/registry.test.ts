@@ -1,11 +1,21 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { AgentRegistry } from "../../dist/agents/registry.js";
-import type { AgentDetector, AgentInfo } from "../../dist/core/types.js";
+import { AgentRegistry } from "../../src/agents/registry.ts";
+import type { AgentDetector, AgentInfo } from "../../src/core/types.ts";
 
 function mockDetector(id: string, installed: boolean): AgentDetector {
   return {
     id,
+    async detectInstalled(): Promise<AgentInfo> {
+      return {
+        id,
+        name: `Mock ${id}`,
+        installed,
+        configPaths: [],
+        configFormat: "json",
+        capabilities: ["rules"],
+      };
+    },
     async detect(): Promise<AgentInfo> {
       return {
         id,
@@ -65,5 +75,45 @@ describe("AgentRegistry", () => {
     const results = await reg.detectAll();
     const installed = results.filter((r) => r.installed);
     assert.equal(installed.length, 2);
+  });
+
+  it("detectInstalledAll uses the fast detector path without full detection", async () => {
+    let installedCalls = 0;
+    let fullCalls = 0;
+
+    const reg = new AgentRegistry([
+      {
+        id: "alpha",
+        async detectInstalled(): Promise<AgentInfo> {
+          installedCalls += 1;
+          return {
+            id: "alpha",
+            name: "Mock alpha",
+            installed: true,
+            configPaths: [],
+            configFormat: "json",
+            capabilities: ["rules"],
+          };
+        },
+        async detect(): Promise<AgentInfo> {
+          fullCalls += 1;
+          return {
+            id: "alpha",
+            name: "Mock alpha",
+            installed: true,
+            version: "9.9.9",
+            configPaths: [],
+            configFormat: "json",
+            capabilities: ["rules"],
+          };
+        },
+      },
+    ]);
+
+    const results = await reg.detectInstalledAll();
+    assert.equal(results.length, 1);
+    assert.equal(results[0].version, undefined);
+    assert.equal(installedCalls, 1);
+    assert.equal(fullCalls, 0);
   });
 });

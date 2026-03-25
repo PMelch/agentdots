@@ -5,17 +5,12 @@ import { which, getVersion } from "../shell.js";
 
 export const copilotDetector: AgentDetector = {
   id: "copilot",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const instructionsPath = join(".github", "copilot-instructions.md");
 
     // Check for CLI binary (gh copilot or standalone copilot)
     let binaryPath = await which("copilot");
     let installed = binaryPath !== null;
-    let version: string | undefined;
-
-    if (installed && binaryPath) {
-      version = await getVersion("copilot") ?? undefined;
-    }
 
     // Also check if gh copilot extension is available
     if (!installed) {
@@ -41,11 +36,17 @@ export const copilotDetector: AgentDetector = {
       id: "copilot",
       name: "GitHub Copilot",
       installed,
-      version,
       binaryPath: binaryPath ?? undefined,
       configPaths: [instructionsPath],
       configFormat: "markdown",
       capabilities: ["rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = await which("copilot")
+      ? await getVersion("copilot") ?? undefined
+      : undefined;
+    return { ...info, version };
   },
 };

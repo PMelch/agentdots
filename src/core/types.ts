@@ -15,5 +15,6 @@ export interface AgentInfo {
 
 export interface AgentDetector {
   id: string;
+  detectInstalled(): Promise<AgentInfo>;
   detect(): Promise<AgentInfo>;
 }

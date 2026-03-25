@@ -6,7 +6,7 @@ import { which } from "../shell.js";
 
 export const windsurfDetector: AgentDetector = {
   id: "windsurf",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     let binaryPath = await which("windsurf");
     let installed = binaryPath !== null;
 
@@ -38,5 +38,8 @@ export const windsurfDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules", "commands"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    return this.detectInstalled();
   },
 };

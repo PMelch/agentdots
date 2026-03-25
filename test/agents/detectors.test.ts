@@ -1,8 +1,8 @@
-import { describe, it, mock, beforeEach, afterEach } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 // Tests for individual detector shape/contract (not binary detection)
-// We test against the built output and validate the AgentInfo structure.
+// We validate the detector contract without triggering slow version lookups.
 
 describe("detector contracts", () => {
   const expectedDetectors = [
@@ -18,15 +18,18 @@ describe("detector contracts", () => {
   ];
 
   for (const expected of expectedDetectors) {
-    it(`${expected.id}: detect() returns valid AgentInfo shape`, async () => {
-      const mod = await import(`../../dist/agents/detectors/${expected.id}.js`);
+    it(`${expected.id}: detectInstalled() returns valid AgentInfo shape`, async () => {
+      const mod = await import(`../../src/agents/detectors/${expected.id}.ts`);
       // Find the exported detector (it's the only export)
-      const detector = Object.values(mod)[0] as { id: string; detect: () => Promise<unknown> };
+      const detector = Object.values(mod)[0] as {
+        id: string;
+        detectInstalled: () => Promise<unknown>;
+      };
 
-      assert.ok(typeof detector.detect === "function", "detect must be a function");
+      assert.ok(typeof detector.detectInstalled === "function", "detectInstalled must be a function");
       assert.equal(detector.id, expected.id);
 
-      const info = await detector.detect() as {
+      const info = await detector.detectInstalled() as {
         id: string;
         name: string;
         installed: boolean;

@@ -6,7 +6,7 @@ import { which, getVersion } from "../shell.js";
 
 export const cursorDetector: AgentDetector = {
   id: "cursor",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     let binaryPath = await which("cursor");
     let installed = binaryPath !== null;
 
@@ -28,13 +28,10 @@ export const cursorDetector: AgentDetector = {
       }
     }
 
-    const version = installed && binaryPath ? await getVersion("cursor") ?? undefined : undefined;
-
     return {
       id: "cursor",
       name: "Cursor",
       installed,
-      version,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), ".cursor"),
@@ -43,5 +40,10 @@ export const cursorDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules", "skills", "commands"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed && info.binaryPath ? await getVersion("cursor") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

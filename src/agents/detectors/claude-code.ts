@@ -5,16 +5,13 @@ import { which, getVersion } from "../shell.js";
 
 export const claudeCodeDetector: AgentDetector = {
   id: "claude-code",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("claude");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("claude") ?? undefined : undefined;
 
     return {
       id: "claude-code",
       name: "Claude Code",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), ".claude"),
@@ -23,5 +20,10 @@ export const claudeCodeDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules", "skills", "commands", "memory"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("claude") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

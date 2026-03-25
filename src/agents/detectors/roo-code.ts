@@ -6,7 +6,7 @@ import { which } from "../shell.js";
 
 export const rooCodeDetector: AgentDetector = {
   id: "roo-code",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     // Roo Code is primarily a VS Code extension — check for its config dirs
     let installed = false;
     const knownPaths = [
@@ -45,5 +45,8 @@ export const rooCodeDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules", "skills", "commands"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    return this.detectInstalled();
   },
 };

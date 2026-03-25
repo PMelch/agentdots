@@ -31,7 +31,7 @@ export async function handleApiRequest(req: IncomingMessage, res: ServerResponse
     }
 
     if (path === "/api/agents" && method === "GET") {
-      const agents = await registry.detectAll();
+      const agents = await registry.detectInstalledAll();
       return sendJson(agents);
     }
 

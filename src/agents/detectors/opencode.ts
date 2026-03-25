@@ -4,20 +4,22 @@ import { which, getVersion } from "../shell.js";
 
 export const opencodeDetector: AgentDetector = {
   id: "opencode",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("opencode");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("opencode") ?? undefined : undefined;
 
     return {
       id: "opencode",
       name: "OpenCode",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [".opencode"],
       configFormat: "json",
       capabilities: ["mcp", "rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("opencode") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

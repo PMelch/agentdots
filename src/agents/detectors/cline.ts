@@ -5,16 +5,13 @@ import { which, getVersion } from "../shell.js";
 
 export const clineDetector: AgentDetector = {
   id: "cline",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("cline");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("cline") ?? undefined : undefined;
 
     return {
       id: "cline",
       name: "Cline",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [
         join(homedir(), "Library", "Application Support", "Code", "User", "globalStorage", "saoudrizwan.claude-dev", "settings"),
@@ -23,5 +20,10 @@ export const clineDetector: AgentDetector = {
       configFormat: "json",
       capabilities: ["mcp", "rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("cline") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

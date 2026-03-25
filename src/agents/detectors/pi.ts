@@ -3,20 +3,22 @@ import { which, getVersion } from "../shell.js";
 
 export const piDetector: AgentDetector = {
   id: "pi",
-  async detect(): Promise<AgentInfo> {
+  async detectInstalled(): Promise<AgentInfo> {
     const binaryPath = await which("pi");
-    const installed = binaryPath !== null;
-    const version = installed ? await getVersion("pi") ?? undefined : undefined;
 
     return {
       id: "pi",
       name: "Pi",
-      installed,
-      version,
+      installed: binaryPath !== null,
       binaryPath: binaryPath ?? undefined,
       configPaths: [],
       configFormat: "custom",
       capabilities: ["rules"],
     };
+  },
+  async detect(): Promise<AgentInfo> {
+    const info = await this.detectInstalled();
+    const version = info.installed ? await getVersion("pi") ?? undefined : undefined;
+    return { ...info, version };
   },
 };

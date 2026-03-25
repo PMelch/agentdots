@@ -41,10 +41,23 @@ class AgentRegistry {
     return results;
   }
 
+  async detectInstalledAll(): Promise<AgentInfo[]> {
+    const results = await Promise.all(
+      [...this.detectors.values()].map((d) => d.detectInstalled())
+    );
+    return results;
+  }
+
   async detect(agentId: string): Promise<AgentInfo | null> {
     const detector = this.detectors.get(agentId);
     if (!detector) return null;
     return detector.detect();
+  }
+
+  async detectInstalled(agentId: string): Promise<AgentInfo | null> {
+    const detector = this.detectors.get(agentId);
+    if (!detector) return null;
+    return detector.detectInstalled();
   }
 
   /** Fast: returns agent stubs without running detection (no shell calls) */

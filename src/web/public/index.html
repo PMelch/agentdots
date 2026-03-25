@@ -38,7 +38,7 @@
                     :usage="usage"
                     :installing-agents="installingAgents"
                     :install-results="installResults"
-                    @select-agent="selectedAgent = $event"
+                    @select-agent="openAgent($event)"
                     @install-agent="installAgent($event)"
                 ></agents-page>
                 <updates-page v-else-if="currentSection === 'updates'"></updates-page>
