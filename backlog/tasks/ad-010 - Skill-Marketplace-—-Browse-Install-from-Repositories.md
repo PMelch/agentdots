@@ -1,9 +1,10 @@
 ---
 id: AD-010
 title: Skill Marketplace — Browse & Install from Repositories
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-23 19:02'
+updated_date: '2026-03-25 16:55'
 labels: []
 dependencies:
   - AD-006
