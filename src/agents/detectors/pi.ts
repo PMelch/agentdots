@@ -13,7 +13,7 @@ export const piDetector: AgentDetector = {
       binaryPath: binaryPath ?? undefined,
       configPaths: [],
       configFormat: "custom",
-      capabilities: ["rules"],
+      capabilities: ["rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

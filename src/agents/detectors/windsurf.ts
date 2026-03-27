@@ -36,7 +36,7 @@ export const windsurfDetector: AgentDetector = {
         ".windsurf",
       ],
       configFormat: "json",
-      capabilities: ["mcp", "rules", "commands"],
+      capabilities: ["mcp", "rules", "skills", "commands"],
     };
   },
   async detect(): Promise<AgentInfo> {

@@ -7,14 +7,15 @@ import assert from "node:assert/strict";
 describe("detector contracts", () => {
   const expectedDetectors = [
     { id: "claude-code", format: "json", capabilities: ["mcp", "rules", "skills", "commands", "memory"] },
-    { id: "codex", format: "toml", capabilities: ["mcp", "rules"] },
-    { id: "gemini", format: "markdown", capabilities: ["rules"] },
+    { id: "codex", format: "toml", capabilities: ["mcp", "rules", "skills"] },
+    { id: "gemini", format: "markdown", capabilities: ["rules", "skills"] },
     { id: "cursor", format: "json", capabilities: ["mcp", "rules", "skills", "commands"] },
-    { id: "copilot", format: "markdown", capabilities: ["rules"] },
-    { id: "opencode", format: "json", capabilities: ["mcp", "rules"] },
+    { id: "copilot", format: "markdown", capabilities: ["rules", "skills"] },
+    { id: "opencode", format: "json", capabilities: ["mcp", "rules", "skills"] },
     { id: "aider", format: "yaml", capabilities: ["rules"] },
-    { id: "windsurf", format: "json", capabilities: ["mcp", "rules", "commands"] },
-    { id: "pi", format: "custom", capabilities: ["rules"] },
+    { id: "windsurf", format: "json", capabilities: ["mcp", "rules", "skills", "commands"] },
+    { id: "pi", format: "custom", capabilities: ["rules", "skills"] },
+    { id: "cline", format: "json", capabilities: ["mcp", "rules", "skills"] },
   ];
 
   for (const expected of expectedDetectors) {

@@ -544,26 +544,82 @@ code {
 }
 
 .skill-card {
+  position: relative;
   background-color: var(--sidebar-bg);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1rem 1.25rem;
-  transition: border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.skill-card:hover {
+.skill-card:hover,
+.skill-card:focus-within {
   border-color: var(--accent-color);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
 }
 
 .skill-name {
   font-weight: 600;
-  margin-bottom: 0.4rem;
 }
 
-.skill-source {
-  font-size: 0.78rem;
+.skill-description {
+  margin: 0;
   color: var(--text-secondary);
-  word-break: break-all;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.skill-hover-card {
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  top: calc(100% - 0.25rem);
+  z-index: 20;
+  background: var(--bg-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 8px;
+  padding: 0.85rem 0.95rem;
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.35rem);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.skill-card:hover .skill-hover-card,
+.skill-card:focus-within .skill-hover-card {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.skill-hover-description,
+.skill-meta-row {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.skill-hover-description {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.skill-meta-row {
+  color: var(--text-secondary);
+}
+
+.skill-meta-key {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: 0.3rem;
 }
 
 /* MCP Page */

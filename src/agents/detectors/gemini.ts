@@ -18,7 +18,7 @@ export const geminiDetector: AgentDetector = {
         "GEMINI.md",
       ],
       configFormat: "markdown",
-      capabilities: ["rules"],
+      capabilities: ["rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

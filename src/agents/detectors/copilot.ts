@@ -39,7 +39,7 @@ export const copilotDetector: AgentDetector = {
       binaryPath: binaryPath ?? undefined,
       configPaths: [instructionsPath],
       configFormat: "markdown",
-      capabilities: ["rules"],
+      capabilities: ["rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

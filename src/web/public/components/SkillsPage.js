@@ -8,6 +8,29 @@ const SCOPE_OPTIONS = [
   { value: "global", label: "Global" },
 ];
 
+export function formatSkillMetadataLabel(key) {
+  return key
+    .split(/[._-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function getSkillCardDetails(skill) {
+  return {
+    description: typeof skill.description === "string" ? skill.description : "",
+    metadata: Array.isArray(skill.metadata)
+      ? skill.metadata
+        .filter((entry) => entry?.key && entry?.value)
+        .map((entry) => ({
+          key: entry.key,
+          label: formatSkillMetadataLabel(entry.key),
+          value: String(entry.value),
+        }))
+      : [],
+  };
+}
+
 // Props:
 //   agents - skillsAgents (filtered agents with skills capability)
 export default {
@@ -120,6 +143,7 @@ export default {
       SCOPE_OPTIONS, fetchSkills, syncSkills, fetchSkillsDiff,
       marketQuery, marketResults, marketLoading, directUrl, installScope,
       installing, installResult, searchMarket, installSkill, installFromUrl,
+      getSkillCardDetails,
     };
   },
   template: `
@@ -135,9 +159,27 @@ export default {
         <p>No skills found for <strong>{{ skillsScope }}</strong> scope.</p>
       </div>
       <div v-else class="skills-grid">
-        <div v-for="skill in skills" :key="skill.name" class="skill-card">
+        <div v-for="skill in skills" :key="skill.name" class="skill-card" tabindex="0">
           <div class="skill-name">{{ skill.name }}</div>
-          <code class="skill-source">{{ skill.source }}</code>
+          <p v-if="getSkillCardDetails(skill).description" class="skill-description">
+            {{ getSkillCardDetails(skill).description }}
+          </p>
+          <div
+            v-if="getSkillCardDetails(skill).description || getSkillCardDetails(skill).metadata.length"
+            class="skill-hover-card"
+          >
+            <p v-if="getSkillCardDetails(skill).description" class="skill-hover-description">
+              {{ getSkillCardDetails(skill).description }}
+            </p>
+            <div
+              v-for="entry in getSkillCardDetails(skill).metadata"
+              :key="entry.key"
+              class="skill-meta-row"
+            >
+              <strong class="skill-meta-key">{{ entry.label }}:</strong>
+              <span>{{ entry.value }}</span>
+            </div>
+          </div>
         </div>
       </div>
 

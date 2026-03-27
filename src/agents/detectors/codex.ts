@@ -17,7 +17,7 @@ export const codexDetector: AgentDetector = {
         join(homedir(), ".codex"),
       ],
       configFormat: "toml",
-      capabilities: ["mcp", "rules"],
+      capabilities: ["mcp", "rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

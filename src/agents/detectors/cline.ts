@@ -18,7 +18,7 @@ export const clineDetector: AgentDetector = {
         ".clinerules",
       ],
       configFormat: "json",
-      capabilities: ["mcp", "rules"],
+      capabilities: ["mcp", "rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

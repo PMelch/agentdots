@@ -14,7 +14,7 @@ export const opencodeDetector: AgentDetector = {
       binaryPath: binaryPath ?? undefined,
       configPaths: [".opencode"],
       configFormat: "json",
-      capabilities: ["mcp", "rules"],
+      capabilities: ["mcp", "rules", "skills"],
     };
   },
   async detect(): Promise<AgentInfo> {

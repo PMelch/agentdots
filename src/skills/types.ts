@@ -1,8 +1,15 @@
+export interface SkillMetadataEntry {
+  key: string;
+  value: string;
+}
+
 export interface SkillDefinition {
   name: string;
   path: string;
   scope: "global" | "project";
   source: string;
+  description?: string;
+  metadata?: SkillMetadataEntry[];
 }
 
 export interface SkillsMapper {
